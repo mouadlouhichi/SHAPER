@@ -2,7 +2,7 @@
 
 **Companion to:** `SHAPER_Paper_Structure.md`  
 **Status:** pre-implementation, revised on **2026-08-13 before experiments** after design review.  
-**Important:** Part B contains hypotheses, not results. Exactness refers to enumeration of all view coalitions; model training and augmentation remain stochastic.
+**Important:** Part B contains hypotheses, not results. Exactness applies only to complete K=3 tables; the K=4 extension is Monte-Carlo approximate, and all model training remains stochastic.
 
 ## Revision record
 
@@ -18,10 +18,10 @@ This revision makes five validity-critical changes:
 
 6. Validation users are reallocated to 20%/60%/20% for tuning/game/selection precision.
 7. Every coalition receives a fixed optimizer-step budget; per-coalition early stopping is removed.
-8. Canonical Games A/B are co-primary; NLL-matched Game A and cosine/K=4 diagnostics have locked supporting scopes.
+8. Exact enumeration is retained only for primary K=3 Game A; Game B is a three-seed policy sensitivity and K=4 uses antithetic permutation Monte Carlo.
 9. A direction-blind precision/seed-extension rule, smooth NLL game, studentized segment test, and fixed Holm family are preregistered.
-10. NT-Xent, projection architecture, filtering, RNG semantics, alpha calibration, control budgets, and realistic 110–190 GPU-hour planning are specified.
-11. Fixed-nominal-budget and fixed-per-view-dose games are co-primary and mapped to different decisions.
+10. NT-Xent, projection architecture, filtering, RNG semantics, alpha calibration, control budgets, and realistic 50–90 GPU-hour planning are specified.
+11. Fixed-nominal-budget Game A is primary; fixed-per-view-dose Game B is a scoped policy-sensitivity estimand.
 12. No-op examples contribute zero loss without changing either game’s denominator.
 13. “Matched difficulty” is relabeled NLL-matched corruption severity, with a cosine-displacement diagnostic.
 14. RQ3 is narrowed to two confirmatory mask hypotheses; crop/reorder trends are exploratory.
@@ -35,6 +35,7 @@ This revision makes five validity-critical changes:
 22. RQ4 reporting is split into unconditional transfer and activation-conditioned deployment tables.
 23. The interaction threshold is tied to Appendix J’s common 0.003 utility-scale precision target; K=4 Game-A-only scope is explicit.
 24. Policy-consistent empty notation, persisted `raw_row_id`, and `B_min` firing rates are locked across paper, code, and manifests.
+25. Runtime is reduced with a hybrid estimator: exact K=3 primary, scoped exact Game B, frozen severity diagnostics, and antithetic permutation-MC K=4.
 
 ---
 
@@ -59,7 +60,7 @@ SHAPER/code/
 │   ├── augment.py           # crop, mask, reorder, no-op diagnostics
 │   ├── backbone.py          # SASRec-style ranking model
 │   ├── contrast.py          # NT-Xent and coalition-specific joint training
-│   ├── game.py              # value tables, exact Shapley, interactions, LOO
+│   ├── game.py              # exact K=3 + permutation-MC K=4, interactions, LOO
 │   ├── segments.py          # prespecified behavioural segments; exploratory clusters
 │   ├── adaptive.py          # SHAPER-Weight and SHAPER-Select
 │   ├── baselines.py         # uniform, LOO, learned gates, direct-search controls
@@ -222,11 +223,11 @@ For every step, log `a_p=B_p/B` and the applicability-adjusted coefficient mass
 
 Report mean, standard deviation, and 10/50/90th percentiles of `a_p` and `m_C` by coalition, seed, dataset, and behavioural segment, alongside view-specific contrastive gradient norms. Call `m_C` effective coefficient mass, not total gradient magnitude.
 
-The two co-primary budget games use the canonical augmentation parameters. A **required main-text NLL-matched corruption-severity companion under fixed-nominal-budget Game A** calibrates η, γ, and β on `V_tune`. Measure every grid point with the frozen rec-only checkpoints from recipe seeds `{901,902,903}`; no model is retrained per severity setting. Average target-NLL increases over users and those three checkpoints, then set target `d_NLL*` to the median canonical increase. For each view, select the grid setting minimizing `|d_p-d_NLL*|`, breaking ties toward the canonical parameter. Use crop lower keep-ratio bounds `{0.5,0.6,0.7,0.8}` with upper bound 1.0, mask ratios `{0.1,0.2,0.3,0.4}`, and reorder span ratios `{0.1,0.2,0.3,0.4}`. Archive settings, achieved distances, and ties before coalition training. Matching succeeds only if every selected view satisfies `|d_p-d_NLL*| / max(|d_NLL*|,1e-8) <= 0.10`. Otherwise label the result **partial NLL severity alignment**, report residuals, and do not claim type and severity were separated. Call successful calibration **NLL-matched corruption severity**, not general perturbation difficulty.
+The exact primary game uses canonical augmentation parameters. A **required NLL-matched corruption-severity diagnostic** calibrates η, γ, and β on `V_tune` with frozen rec-only checkpoints from recipe seeds `{901,902,903}`; no full coalition sweep is trained for this diagnostic. Average target-NLL increases over users and checkpoints, then set target `d_NLL*` to the median canonical increase. For each view, select the grid setting minimizing `|d_p-d_NLL*|`, breaking ties toward the canonical parameter. Use crop lower keep-ratio bounds `{0.5,0.6,0.7,0.8}` with upper bound 1.0, mask ratios `{0.1,0.2,0.3,0.4}`, and reorder span ratios `{0.1,0.2,0.3,0.4}`. Archive settings, achieved distances, and ties before coalition training. Matching succeeds only if every selected view satisfies `|d_p-d_NLL*| / max(|d_NLL*|,1e-8) <= 0.10`. Otherwise label the result **partial NLL severity alignment**, report residuals, and do not claim type and severity were separated. Call successful calibration **NLL-matched corruption severity**, not general perturbation difficulty.
 
-A contrastive-specific diagnostic repeats the calibration using mean cosine displacement between original and perturbed sequence representations from the frozen rec-only calibration encoder. Set `d_cos*` to the median canonical displacement, select from the same grids, and require the same 10% relative-residual rule; otherwise label it partial cosine alignment. Run fixed-nominal-budget Game A for three prespecified seeds per dataset. This cosine-matched diagnostic cannot replace either co-primary canonical budget game or the NLL-matched companion after results are observed.
+A contrastive-specific diagnostic repeats calibration using mean cosine displacement from the frozen rec-only encoder. Set `d_cos*` to the median canonical displacement, select from the same grids, and require the same 10% residual rule; otherwise label partial cosine alignment. Neither NLL nor cosine alignment produces a separate Shapley game. Pilot seed `1002` provides the only ranking confirmation: the three matched singletons and matched grand coalition, with no pair coalitions. These diagnostics cannot replace the exact canonical game after outcomes are observed.
 
-Report canonical, NLL-matched, and cosine-matched conclusions explicitly. Prespecified η/γ/β and protect-last-1/2 sweeps use only frozen rec-only `V_tune` NLL/cosine diagnostics; they do not launch additional coalition games. Pilot seed `1002` provides the only exploratory singleton/grand ranking confirmation at selected severity extremes, as locked in A.15.
+Report canonical, NLL-alignment, and cosine-alignment conclusions explicitly. η/γ/β and protect-last-1/2 sweeps remain frozen-encoder diagnostics only.
 
 ## A.5 Backbone and recommendation objective (`backbone.py`)
 
@@ -260,7 +261,7 @@ This matched design reduces variance without letting excluded players influence 
 - Use AdamW with `betas=(0.9,0.98)`, `eps=1e-8`, weight decay `1e-4`, global gradient-norm clipping at `1.0`, linear warm-up for the first `10%` of locked steps, and cosine decay to `0.1 × learning_rate`. These settings are fixed; only the initial learning rate is selected from the declared grid.
 - SASRec backbone dropout `0.2` is active in every coalition, including empty. Every stochastic forward uses a counter/forked RNG key `(seed, optimizer_step, purpose, view, pass_index)`, so adding a view cannot shift recommendation or incumbent-view dropout masks. The dropout **player** is a separate SimCSE-style contrastive procedure formed by two additional keyed stochastic forwards; it does not switch ordinary backbone dropout on or off.
 
-## A.6 Coalition training and co-primary budget games (`contrast.py`)
+## A.6 Primary exact game and secondary policy-sensitivity game (`contrast.py`)
 
 For every coalition `C`, train the **full ranking model** from the common seed-specific initialization:
 
@@ -338,12 +339,10 @@ def train_coalition(base_state, coalition, loaders, schedules, cfg):
   2. With that rate and provisional `(lambda_cl,tau)=(0.1,0.1)`, train empty and grand models to 10,000 steps on recipe seeds `{901,902,903}`, checkpoint at `{2_500,5_000,10_000}`, and choose the step count minimizing the arithmetic mean empty/grand `V_tune` target NLL; tie-break toward fewer steps.
   3. At the locked step count, evaluate all nine `(lambda_cl,tau)` pairs from `{0.05,0.1,0.2} × {0.07,0.1,0.2}` on seed `901`; advance the best two pairs by NLL to seeds `{902,903}`, then select the lower mean-NLL pair, tie-breaking toward smaller `lambda_cl` then larger `tau`.
   4. Freeze learning rate, step count, `lambda_cl`, and `tau` for every declared coalition game.
-- The recipe optimizes a deployment configuration, not each subset. Co-primary values are evaluated on disjoint `V_game`, and a bounded singleton stress test evaluates `lambda_cl ∈ {0.05,0.1,0.2}` on `V_tune` for one calibration seed without changing the main estimand.
-- Fix one `lambda_cl` and one `tau` across all nonempty coalitions in every declared game. This defines the estimand as view value **inside one deployment-tuned training recipe**, not the best separately tuned model for each subset. Report a small singleton `lambda_cl` sensitivity on `V_tune` as a diagnostic.
-- Every baseline receives a declared, comparable validation budget.
-- **Co-primary Game A — fixed nominal coefficient budget:** `L_cl(C)=|C|^{-1} sum_{p∈C} L_cl^p`. Adding a player introduces its signal and reallocates nominal budget away from incumbents. This game directly supports SHAPER-Weight and SHAPER-Select, whose weights also sum to one.
-- **Co-primary Game B — fixed per-view dose:** `L_cl(C)=K^{-1} sum_{p∈C} L_cl^p`. Adding a player leaves incumbent coefficients unchanged and increases total contrastive dose from `|C|λ/K` to `(|C|+1)λ/K`. This game supports the narrower question of whether a view adds value at a fixed per-view coefficient.
-- Because `|P|=K`, Games A/B share the same empty and grand objectives; only intermediate coalition coefficients differ. Reuse the identical trained empty/grand models within a seed, run all distinct intermediate models for the full confirmatory seed set, and never pool policy-specific intermediate values or describe one as a robustness rerun of the other. If their conclusions differ, report policy dependence as a primary result. RQ4 actions are derived only from Game A.
+- The recipe optimizes one deployment configuration, not each subset. A bounded singleton stress test evaluates `lambda_cl ∈ {0.05,0.1,0.2}` on `V_tune`, seed `901`, without changing the estimand.
+- Fix one `lambda_cl` and one `tau` across every declared model. Every baseline receives a declared validation budget.
+- **Primary Game A — fixed nominal coefficient budget:** `L_cl(C)=|C|^{-1} sum_{p∈C} L_cl^p`. Compute exact Shapley from all eight K=3 coalitions for the confirmatory seed set on both datasets. Game A alone supplies RQ1 headline attribution and RQ4 actions.
+- **Secondary Game B — fixed per-view dose:** `L_cl(C)=K^{-1} sum_{p∈C} L_cl^p`. Evaluate it exactly only on seeds `2001–2003` as policy sensitivity. Since A/B share empty and grand objectives, train only Game B's six distinct intermediate coalitions. Never pool A/B values, and Game B cannot trigger seed expansion.
 
 ### Optional cached surrogate
 
@@ -379,15 +378,26 @@ Calculate exact Shapley values from all coalitions:
 [v_s(C\cup\{p\})-v_s(C)].
 \]
 
-- `K=3`: eight fully trained models per dataset and seed.
-- `K=4`: sixteen coalitions for the required Beauty fixed-nominal-budget RQ2 extension on seeds `3001–3005`; the dropout player is a contrastive stochastic-forward procedure, not ordinary backbone dropout.
-- Exactness is conditional on the realized seed-specific value table.
-- Report one Shapley vector per seed, then aggregate with uncertainty.
-- By linearity, `Shapley(mean_s v_s) = mean_s Shapley(v_s)`. Thus the mean seed-specific vector is exactly the Shapley vector of the mean observed game; finite-seed uncertainty remains.
+- **Primary K=3 Game A:** train all eight coalitions for every confirmatory seed; Shapley and pair interactions are exact conditional on each realized table.
+- **Secondary K=3 Game B:** train all six distinct intermediate coalitions only for seeds `2001–2003`; empty/grand models are reused from Game A. Its Shapley vector is exact for those three seed-specific tables but policy-sensitivity claims are descriptive.
+- Report one vector per seed. By linearity, `Shapley(mean_s v_s) = mean_s Shapley(v_s)` for each complete K=3 game; finite-seed uncertainty remains.
+
+### Monte-Carlo K=4 Beauty extension
+
+The Beauty dropout extension uses permutation Monte Carlo rather than all 16 coalitions:
+
+1. For each seed `3001–3005`, sample one uniform player permutation `pi_s` from the frozen seed registry and include its reverse as an antithetic pair.
+2. Train/cache every unique prefix coalition on both paths, sharing empty/full; this requires at most eight path coalitions.
+3. Also train/cache all four `P\\{p}` coalitions needed for exact grand-LOO, deduplicating against the paths; the resulting budget is at most 10 unique coalition models per seed.
+4. Estimate each view's Shapley value as the mean of its marginal contribution on `pi_s` and `reverse(pi_s)`. Aggregate ten permutation marginals across five seeds and report nested seed/permutation uncertainty.
+5. Report nested seed/permutation standard errors. Interpret a K=4 view ordering only if its 95% MC half-width is at most `delta_phi`; otherwise label it inconclusive without adding models beyond the locked cap.
+6. Label K=4 Shapley **Monte-Carlo approximate**. Do not report exact K=4 Grabisch–Roubens interactions from an incomplete table.
+
+Permutation sampling reduces the K=4 sweep from 16 to at most 10 models per seed. FastSHAP/KernelSHAP is not used: with one global game and only 3–4 players, allocation arithmetic is negligible, FastSHAP's amortized explainer adds training/validation overhead, and neither method removes the need to obtain coalition utilities.
 
 ### Test use
 
-Shapley values averaged over the prespecified `V_game` seed runs construct one dataset-level SHAPER-Weight target and SHAPER-Select ordering. `V_select` users choose alpha and any direct-search setting. After all decisions are locked, prespecified models are evaluated on test. A test coalition table may be reported as post-hoc descriptive evidence, but test-derived attributions never feed back into training or selection.
+Only exact primary Game-A Shapley values averaged over confirmatory `V_game` seeds construct the dataset-level Weight target and Select ordering. `V_select` users choose alpha and any direct-search setting. After all decisions are locked, prespecified models are evaluated on test. A test coalition table may be reported as post-hoc descriptive evidence, but test-derived attributions never feed back into training or selection.
 
 ### Per-user and segment utilities
 
@@ -449,6 +459,8 @@ Correctness tests:
 16. **Epoch schedule:** every eligible training user appears exactly once per epoch permutation, epoch hashes match across coalitions/workers, and fixed-step cycling generates a new keyed permutation rather than replaying one cached order.
 17. **Recommendation negatives:** every sampled negative differs from the positive, is absent from the user’s training history, and is hash-identical across coalitions for the same `(seed,step,user,position)`.
 18. **Effective-mass logging:** synthetic applicability tensors produce exactly `sum(a_p)/|C|` in Game A and `sum(a_p)/K` in Game B, with unchanged results across batching/worker order.
+19. **MC telescoping efficiency:** every sampled K=4 permutation path satisfies `sum_p marginal_p = v(P)-v(empty)`; antithetic averaging preserves efficiency.
+20. **MC cache/budget:** prefix and grand-LOO coalitions are deduplicated, all four `P\\{p}` coalitions exist, and no K=4 seed exceeds 10 trained coalition models.
 
 Interpretation diagnostics—not unit tests—include coalition spread versus seed noise, uplift confidence intervals, augmentation no-op rates, stopping-budget sensitivity, and an identical-configuration repeat of the grand coalition. Also report every monotonicity violation `v(C∪{p}) < v(C)` and its uncertainty. Such a violation can indicate a harmful view, negative interaction, dose-policy effect, or training instability; it is a finding to diagnose, not automatically a failed run. The seed-2001 repeat is always reported; exact identity confirms deterministic execution, while any difference defines the empirical nondeterminism floor. Failing a precision diagnostic yields an underpowered or null result, not an implementation failure.
 
@@ -513,8 +525,8 @@ The unconditional table tests transfer; the conditioned table describes what the
 
 - Define Q1–Q4 from **pre-truncation training-history length** only.
 - Freeze boundaries before looking at Shapley values.
-- Use the same `V_game` users across coalitions.
-- Average each user’s raw Shapley vector across confirmatory seeds. For the one-sided confirmatory mask trend, use `T_mask = sum_{m=1}^4 (m-2.5) * mu_mask[m]`; larger values indicate increasing credit. For the omnibus profile test, use the studentized statistic `T_all = sum_{m,p} (mu[m,p] - mu[p])**2 / (SE[m,p]**2 + eps)`. Use 10,000 permutations of frozen user-to-segment labels; one permuted user map applies to all seed records.
+- Use exact primary K=3 Game-A values and the same `V_game` users across coalitions; Game B and MC K=4 are excluded from confirmatory segment inference.
+- Average each user’s raw Game-A Shapley vector across confirmatory seeds. For the one-sided confirmatory mask trend, use `T_mask = sum_{m=1}^4 (m-2.5) * mu_mask[m]`; larger values indicate increasing credit. For the omnibus profile test, use the studentized statistic `T_all = sum_{m,p} (mu[m,p] - mu[p])**2 / (SE[m,p]**2 + eps)`. Use 10,000 permutations of frozen user-to-segment labels; one permuted user map applies to all seed records.
 - Report raw segment Shapley values and uplift before normalized shares.
 - Suppress percentage shares when segment uplift is near zero or changes sign.
 
@@ -555,7 +567,7 @@ Attribution clusters are explanatory and are not used as deployment rules unless
 
 Appendix J regenerates this table from actual counts and pilot-informed variance scenarios.
 - If even the optimistic prespecified five-seed scenario exceeds the relevant delta, the pilot-informed amendment starts that dataset at all ten confirmatory seeds rather than planning a predictable mid-run extension.
-- After five coalition seeds, extend canonical Games A/B for a dataset to seeds `2006–2010` if **any** canonical raw `phi_p` interval has half-width above `delta_phi` or the shared grand-uplift interval has half-width above `delta_action`. The NLL-matched Game-A companion follows the resulting Game-A seed count but never triggers expansion independently; cosine and Beauty K=4 diagnostics remain at their locked counts.
+- After five primary Game-A seeds, extend Game A for a dataset to seeds `2006–2010` if **any** raw `phi_p` interval has half-width above `delta_phi` or grand uplift exceeds the `delta_action` half-width. Game B remains at seeds `2001–2003`; frozen severity diagnostics and Monte-Carlo K=4 remain at locked budgets.
 - After alpha is locked and five final Weight/uniform intervention models are evaluated on `V_select` without test access, extend final intervention seeds to `2006–2010` if the Weight-minus-uniform interval half-width exceeds `delta_action`.
 - SHAPER-Weight activates only if the Game-A grand-uplift 95% interval lies above zero, the highest-weight view has the same positive sign in at least 4/5 seeds (8/10 after extension), and every view receiving positive clipped mass is positive in at least 80% of seeds. Otherwise report non-activation and use rec-only as the deployment fallback. Never expand or activate because an effect merely looks promising.
 
@@ -571,7 +583,7 @@ This smooth game is a prespecified secondary outcome for RQ1/RQ2 and a **co-prim
 
 ### Holm family
 
-The confirmatory intervention family is fixed as: (1) Weight vs uniform, (2) Select vs uniform, (3) Weight vs LOO-derived weights, (4) Select vs drop-lowest-LOO, (5) Weight vs learned gates, and (6) Weight vs selected direct-search weights. The confirmatory mask family contains 12 tests: the six dataset/budget tests (four Q1→Q4 trends plus two cross-dataset contrasts) under each of NDCG and NLL. Separately, interaction intervals are Holm-adjusted within each dataset across the six canonical K=3 pair-by-budget-game tests. NLL/cosine severity-control interactions and Beauty K=4 pair interactions are descriptive stress tests unless a separate family is archived before execution. Other comparisons are descriptive.
+The confirmatory intervention family is fixed as: (1) Weight vs uniform, (2) Select vs uniform, (3) Weight vs LOO-derived weights, (4) Select vs drop-lowest-LOO, (5) Weight vs learned gates, and (6) Weight vs selected direct-search weights. The confirmatory mask family contains six exact-Game-A tests: two dataset-specific Q1→Q4 trends plus one cross-dataset contrast under each of NDCG and NLL. Exact K=3 Game-A interactions are Holm-adjusted across three pairs within each dataset. Game B, severity diagnostics, and Monte-Carlo K=4 results are descriptive.
 
 ## A.13 Runtime budget
 
@@ -585,16 +597,15 @@ Every declared coalition game requires full ranking-model training. Estimated ra
 | Locked recipe calibration | 8–12 hr | 4–7 hr |
 | Two excluded pilot games | 4–8 hr | 2–4 hr |
 | One eight-coalition game, one seed | 2–4 hr | 1–2 hr |
-| Canonical Game A, five seeds | 10–20 hr | 5–10 hr |
-| Canonical Game B additional intermediate models, five seeds | 8–15 hr | 4–8 hr |
-| NLL-matched corruption-severity Game A, five seeds | 10–20 hr | 5–10 hr |
-| Cosine-matched diagnostic Game A, three seeds | 6–12 hr | 3–6 hr |
-| Required Beauty K=4 Game A, five seeds | — | 11–20 hr |
+| Exact primary Game A, five seeds | 10–20 hr | 5–10 hr |
+| Exact Game B intermediate models, three seeds | 5–9 hr | 2–5 hr |
+| Frozen NLL/cosine severity diagnostics + pilot ranking confirmation | 1–3 hr | < 2 hr |
+| Monte-Carlo Beauty K=4, ≤10 models × five seeds | — | 7–13 hr |
 | Shapley/LOO/interactions | seconds | seconds |
 | Segment aggregation | < 5 min | < 5 min |
 | Alpha calibration + final Weight seeds | 8–18 hr across both datasets | included in combined estimate |
-| LOO weights, learned gates, direct/random calibration, selected final controls | 10–30 hr across both datasets | included in combined estimate |
-| **Expected full declared study** | **approximately 110–190 single-GPU hours across both datasets; higher if the precision rule expands the main games to ten seeds** | |
+| LOO weights, learned gates, direct/random calibration, selected final controls | 8–20 hr across both datasets | included in combined estimate |
+| **Expected full declared study** | **approximately 50–90 single-GPU hours; higher only if primary Game A or final interventions expand to ten seeds** | |
 
 SHAPER-Select and removal displays reuse coalition models and require no new training. CPU execution remains possible but is not advertised for the full study. Replace every estimate with measured hardware-specific time and energy, and distinguish training cost from recommendation-time cost.
 
@@ -604,31 +615,31 @@ Let `B` be one full coalition-model training cost.
 
 | Component | Complexity |
 |---|---:|
-| One coalition game | `O(2^K B)` per seed |
-| Two co-primary canonical budget games | `O((2·2^K−2)B)` per seed; shared empty/grand |
-| NLL-matched Game A companion | `O(2^K B)` per seed |
-| Cosine-matched Game A diagnostic | `O(2^K B)` per diagnostic seed |
-| Aggregate Shapley | `O(K 2^K)` |
-| Per-user Shapley aggregation | `O(|U| K 2^K)` |
-| Pair interactions | `O(K^2 2^K)` |
+| Exact primary K=3 Game A | `O(2^K B)` per seed = `8B` |
+| Secondary K=3 Game B | `O((2^K−2)B)` per diagnostic seed; empty/grand reused |
+| Frozen severity calibration | forward-only grid scoring + four nonempty pilot models per dataset |
+| Monte-Carlo K=4 Beauty | `O(SB)` per seed, `S≤10` unique coalitions instead of 16 |
+| Exact K=3 Shapley aggregation | `O(K2^K)` |
+| MC K=4 Shapley aggregation | `O(MK)` marginal samples plus nested uncertainty |
+| Per-user exact K=3 aggregation | `O(|U|K2^K)` |
+| Exact pair interactions | K=3 complete tables only |
 | SHAPER-Weight final training | `O(B)` per selected alpha/seed |
 
-The valid selling point is that small `K` makes complete interventions feasible, not that attribution costs only a few head refits.
+The expensive operation is coalition-model training, not Shapley arithmetic. Exact enumeration is retained where it costs only eight models and is replaced by antithetic permutation Monte Carlo only for K=4.
 
 ## A.15 Locked experiment scope
 
 | Item | Locked scope |
 |---|---|
-| Canonical Game A (`1/|C|`) | both datasets; 5 confirmatory seeds, conditionally 10 |
-| Canonical Game B (`1/K`) | both datasets; same seed count as Game A; shared empty/grand models |
-| NLL-matched Game A | both datasets; follows Game-A seed count but never triggers expansion independently |
-| Cosine-matched Game A | both datasets; seeds `2001–2003` only |
-| Beauty K=4 Game A with dropout player | required RQ2 extension; Beauty only; seeds `3001–3005` |
-| η/γ/β and protect-last diagnostics | frozen rec-only `V_tune` NLL/cosine only; no full coalition retraining |
-| Ranking confirmation for severity extremes | pilot seed `1002`; singletons plus grand only; exploratory |
-| Singleton `lambda_cl` stress test | `V_tune`, recipe seed `901`, three values; diagnostic only |
+| Exact canonical Game A (`1/|C|`) | both datasets; 5 confirmatory seeds, conditionally 10 |
+| Exact Game B policy sensitivity (`1/K`) | both datasets; seeds `2001–2003`; six intermediate coalitions only |
+| NLL/cosine severity alignment | frozen rec-only `V_tune` scoring; no coalition Shapley game |
+| Ranking confirmation for aligned severity | pilot seed `1002`; three singletons + grand only |
+| Beauty K=4 Game A with dropout | antithetic permutation MC; seeds `3001–3005`; ≤10 unique models/seed |
+| η/γ/β and protect-last diagnostics | frozen rec-only NLL/cosine only; no coalition retraining |
+| Singleton `lambda_cl` stress test | `V_tune`, seed `901`, three values |
 | Cached ranking-adapter surrogate | Beauty only, seed `4001` |
-| Sampled-permutation Shapley audit | existing exact tables; no training |
+| Exact-vs-MC audit | sample permutations from exact K=3 tables; no training |
 
 The Beauty K=4 extension tests context richness only under Game A; it does not test K=4 policy dependence between Games A/B. If an experiment is absent from this table, it is not part of the archived study without a labeled amendment.
 
@@ -645,10 +656,12 @@ The Beauty K=4 extension tests context richness only under Game A; it does not t
 | Processed dataset counts | generated from finalized artifacts; no raw-count substitution | validity check |
 | Evaluation | full-catalog, one test target per user, deterministic filtering/ties | fixed protocol |
 | Validation roles | disjoint 20%/60%/20% `V_tune`/`V_game`/`V_select` user partitions | fixed protocol |
-| Co-primary estimands | canonical fixed-nominal-budget Game A and fixed-per-view-dose Game B | fixed protocol |
-| Severity controls | NLL-matched Game A follows canonical Game-A seed count; cosine-matched Game A uses three seeds | required diagnostic |
+| Primary estimand | exact K=3 fixed-nominal-budget Game A | confirmatory |
+| Policy sensitivity | exact K=3 Game B on seeds `2001–2003` | secondary |
+| Severity controls | frozen NLL/cosine alignment + pilot singleton/grand ranking confirmation | diagnostic |
+| K=4 extension | antithetic permutation-MC Game A on Beauty | approximate diagnostic |
 | Grand-coalition uplift | directionally nonnegative on average, but may be small relative to seed noise | low-confidence hypothesis |
-| Shapley exactness | efficiency holds exactly per realized seed-specific game | mathematical check |
+| Allocation status | K=3 Game A/B exact; K=4 antithetic permutation-MC with telescoping efficiency | fixed protocol |
 | Training uncertainty | nonzero and reported across matched seeds | required |
 
 No hard NDCG range is preregistered because loss choice and preprocessing materially affect scale. A result near 0.30 is not automatically invalid, but it triggers an audit for sampled-negative evaluation and preprocessing mismatch.
@@ -660,7 +673,7 @@ Confirmatory directional hypotheses:
 1. **Mask credit increases with available history length.** Longer histories contain more transitions from which masking can teach missing-event invariance while retaining enough context; short histories are more likely to lose a decisive recent signal. Test this on raw mask Shapley values across Q1–Q4.
 2. **Mask is relatively more valuable on ML-1M than Beauty.** This is the only confirmatory cross-dataset ordering claim.
 
-Crop and reorder rankings, signs, and segment trends are exploratory. Exact percentage ranges are exploratory. Directional mask claims carry interpretive weight only if their policy dependence and corruption-severity dependence are reported across canonical Games A/B and the NLL-matched companion.
+Crop/reorder rankings and all Game-B trends are exploratory. Confirmatory mask claims use exact Game A. Report whether the three-seed Game-B policy sensitivity and frozen NLL/cosine severity diagnostics agree, but neither can replace Game A after outcomes are observed.
 
 Raw signed values are primary. Normalized shares are shown only when total uplift is stably away from zero.
 
@@ -703,14 +716,14 @@ No fixed +1.5% to +10% gain is preregistered. Attribution-to-intervention transf
 |---|---|---|
 | All nonempty coalition rankings are identical | ranking-path or training bug | stop; inspect coalition training |
 | Coalition spread or a reported marginal does not exceed the seed-2001 repeat floor | differences are not separable from execution nondeterminism | label attribution/marginal inconclusive; do not interpret sign or ordering |
-| Any canonical `phi_p` or shared grand-uplift CI exceeds its locked half-width | coalition precision is inadequate | expand canonical Games A/B and NLL companion to ten seeds; if still wide, report underpowered |
+| Any primary Game-A `phi_p` or grand-uplift CI exceeds its locked half-width | coalition precision is inadequate | expand exact Game A to ten seeds; keep diagnostics at locked budgets |
 | Weight−uniform `V_select` CI exceeds `delta_action` | intervention precision is inadequate | expand final intervention seeds to ten before test; if still wide, report underpowered |
 | Coalition spread is small relative to seed uncertainty | game is weak at this scale | report null; use prespecified smooth secondary metric only as diagnosis |
 | Some `v(C∪{p}) < v(C)` | nonmonotonic view effect, negative interaction, dose-policy effect, or instability | report contextual marginal and uncertainty; diagnose rather than auto-discard |
 | Grand uplift is zero/negative | contrast does not help this setup | report; do not normalize unstable shares or force weighting |
-| Games A and B disagree in sign/order | attribution is budget-policy dependent | report both as a primary result; derive RQ4 only from Game A |
+| Primary Game A and secondary Game B disagree | attribution is budget-policy dependent | retain Game A headline; report Game B as scoped sensitivity and derive RQ4 only from A |
 | NLL or cosine residual exceeds 10% | calibration failed to match the declared severity proxy | label partial alignment, report residuals, and do not claim type/severity separation |
-| NLL/cosine severity controls disagree with canonical games | conclusions depend on corruption-severity convention | report mechanism dependence; do not select the favorable convention |
+| Frozen NLL/cosine diagnostics disagree with canonical Game A | conclusions depend on severity proxy | report mechanism dependence; do not select a favorable proxy |
 | Natural interactions are near zero | little augmentation redundancy | retain controlled synthetic result; soften RQ2 |
 | Behavioural profiles are homogeneous | global weighting may suffice | report stability as a negative result |
 | Weight/Select activation rule fails | contrast/action evidence is insufficient | still report unconditional forced candidates; activation-conditioned deployment is rec-only with `not activated` status |
@@ -725,9 +738,9 @@ Do not add a dataset or alter perturbation severity solely to recover a failed h
 
 1. **Data artifact gate:** processed counts, timestamp ties, repeated targets, lengths, and leakage checks are correct.
 2. **Single-model gate:** use the first excluded pilot/engineering seed to validate rec-only/grand metrics, fixed-step training, deterministic manifests, and same-config repeat behavior.
-3. **Two-seed pilot gate:** complete two full canonical Game-A pilot seeds per dataset, verify rankings vary for substantive reasons, and pass tests 1–18. Pilot outcomes are excluded from confirmatory estimates and used only for the pilot-informed MDE table.
+3. **Two-seed pilot gate:** complete two full canonical Game-A pilot seeds per dataset, verify rankings vary for substantive reasons, and pass tests 1–20. Pilot outcomes are excluded from confirmatory estimates and used only for the pilot-informed MDE table.
 4. **Archive gate:** freeze the 20/60/20 roles, all seed integers, batch/optimizer recipe, locked scope table, MDE table, delta values, canonical/NLL/cosine parameters and residuals, budget policies, seed triggers, activation/tie rules, and Holm families.
-5. **Coalition study:** run the locked K=3 games, plus the five-seed Beauty K=4 Game-A extension. Report complete tables, Shapley, contextual marginals, grand-LOO, interactions, precision intervals, and small-game removal displays. Extend canonical Games A/B and the NLL companion under the direction-blind rule.
+5. **Coalition study:** run exact primary K=3 Game A, three-seed exact Game B policy sensitivity, frozen severity diagnostics, and five-seed antithetic-MC Beauty K=4. Extend only primary Game A under the direction-blind rule.
 6. **Behavioural heterogeneity:** fixed length segments and studentized label-permutation analysis.
 7. **Interventions:** `V_game`-derived weights/orderings, `V_select` calibration, then locked all-user test evaluation.
 8. **Optional appendix:** cached ranking-adapter surrogate only.
