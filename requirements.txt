@@ -1,0 +1,17 @@
+# SHAPER registered environment (spec A.2). Authoring constraint:
+#   python = 3.12; torch >= 2.4; numpy >= 2.4,<2.5; scipy >= 1.18
+# CI must exercise the exact lock file (requirements.lock). The verification
+# runs in this repository were executed on Python 3.11 with the newest
+# compatible SciPy (1.17.1); the exact verified versions are recorded in
+# requirements.lock and every run's environment.json.
+torch>=2.4
+numpy>=2.4,<2.5
+scipy>=1.17,<2.0
+scikit-learn>=1.6
+pandas>=2.2
+matplotlib>=3.9
+PyYAML
+tqdm
+pytest
+nbformat
+psutil

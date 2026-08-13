@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shaper"
+version = "1.0.0"
+description = "SHAPER: SHAPley-guided PERturbation learning — cooperative attribution of training-time augmentation views in contrastive sequential recommendation"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = {text = "MIT"}
+authors = [
+    {name = "Mouad Louhichi", email = "mouad_louhichi@um5.ac.ma"},
+    {name = "Redwane Nesmaoui"},
+    {name = "Mohamed Lazaar"},
+]
+dependencies = [
+    "torch>=2.4",
+    "numpy>=2.4,<2.5",
+    "scipy>=1.17; python_version < '3.12'",
+    "scipy>=1.18; python_version >= '3.12'",
+    "scikit-learn>=1.6",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "PyYAML",
+    "tqdm",
+    "pytest",
+    "nbformat",
+    "psutil",
+]
+
+[project.scripts]
+shaper-preflight = "scripts.preflight:main"
+shaper-build-data = "scripts.build_data:main"
+shaper-train-recipe = "scripts.train_recipe:main"
+shaper-train-coalitions = "scripts.train_coalitions:main"
+shaper-run-game = "scripts.run_game:main"
+shaper-run-segments = "scripts.run_segments:main"
+shaper-run-power = "scripts.run_power:main"
+shaper-run-interventions = "scripts.run_interventions:main"
+shaper-validate-run = "scripts.validate_run:main"
+shaper-run-all = "scripts.run_all:main"
+
+[tool.setuptools]
+packages = ["shaper"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:.*torch.load.*:FutureWarning",
+]
+markers = [
+    "unit: unit tests",
+    "protocol: registered-protocol tests",
+    "integration: pipeline/invariance/failure-injection tests",
+    "regression: golden-value regression tests",
+    "resume: checkpoint/resume tests",
+]
+
+[tool.ruff]
+line-length = 110

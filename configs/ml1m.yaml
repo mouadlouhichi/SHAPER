@@ -1,0 +1,75 @@
+# SHAPER — MovieLens-1M protocol configuration (locked).
+# Authoritative document: specs/SHAPER_Implementation_Spec.md (A.3, A.4, A.5).
+dataset:
+  name: ml1m
+  source: "GroupLens ml-1m.zip (ratings.dat)"
+  # rating >= 4 is a positive implicit interaction; everything else discarded
+  implicit_rating_threshold: 4
+  core: 5                      # iterative 5-core filtering to fixed point
+  core_order: rating_row_order # deterministic processing order
+  max_len: 200                 # truncation length for model tensors
+  batch_size: 128              # one user history per training example
+  seed: 20260813               # data-artifact processing seed (frozen)
+  raw_file: ratings.dat
+  expected_raw_zip_md5: "c4d9eecfca2ab87c1945afe126590906"  # GroupLens ml-1m.zip
+
+model:
+  d: 64
+  heads: 2
+  blocks: 2
+  ff: 256
+  dropout: 0.2
+  projection: [64, 64, 64]     # Linear(64,64) -> ReLU -> Linear(64,64)
+  embed_vocab_offset: 2        # padding ID 0; [MASK] = n_items + 1
+
+augmentation:
+  min_contrastive_pairs: 8     # B_min fixed before execution
+  crop:
+    eta_low: 0.5
+    eta_high: 1.0
+    min_keep: 2
+    force_nonidentity: true
+  mask:
+    gamma: 0.2
+    protect_last: false        # main protocol does NOT protect last two positions
+  reorder:
+    beta: 0.2
+    min_span: 2
+    max_attempts: 10
+  dropout:
+    p: 0.2
+    extra_forwards: 2          # contrastive dropout player: two extra keyed forwards
+
+training:
+  optimizer: adamw
+  betas: [0.9, 0.98]
+  eps: 1.0e-8
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  warmup_frac: 0.10           # linear warmup over first 10% of locked steps
+  cosine_final_frac: 0.1      # cosine decay to 0.1 * learning_rate
+  # lr, steps, lambda_cl, tau are frozen by RECIPE_CALIBRATION on V_tune and
+  # are recorded in configs/manifest_freeze.yaml (selected_recipe).
+  lr: null
+  steps: null
+  lambda_cl: null
+  tau: null
+  checkpoint_interval: 500     # optimizer steps between coalition checkpoints
+
+evaluation:
+  k: 10                        # NDCG@10 primary
+  secondary_ks: [5, 20]
+  tie_break: item_id_ascending # deterministic ties
+  prefix_filter: true          # exclude every item in the available prefix
+  retain_repeated_target: true # if target occurs in prefix keep it, count repeats
+
+roles:                         # disjoint validation-user roles (20/60/20)
+  tune: 0.20
+  game: 0.60
+  select: 0.20
+
+# Per-dataset nominal planning cost (minutes per coalition model, GPU).
+# Planning estimates only — the paper reports measured values.
+cost_estimate:
+  minutes_per_coalition: [15, 30]   # [low, high]
+  peak_gpu_memory_target_gb: 8

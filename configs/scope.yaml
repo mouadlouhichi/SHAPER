@@ -1,0 +1,66 @@
+# SHAPER — locked experiment scope (spec A.15, "Locked experiment scope").
+# If an experiment is absent from this table it is not part of the archived
+# study without a labeled, timestamped amendment.
+scope:
+  - item: exact_canonical_game_a
+    description: "Exact canonical Game A (1/|C|) — primary estimand"
+    datasets: [ml1m, beauty]
+    seeds: confirmatory_game_a          # 2001–2005
+    extension: extension_game_a         # 2006–2010, direction-blind precision rule only
+    coalitions: all_2k                  # 8 coalitions per seed
+    allocation: exact_shapley
+  - item: exact_game_b
+    description: "Exact Game B policy sensitivity (1/K) — secondary, descriptive"
+    datasets: [ml1m, beauty]
+    seeds: game_b                       # 2001–2003 only; empty/grand reused from Game A
+    coalitions: intermediate_only       # 6 distinct intermediate coalitions
+    allocation: exact_shapley
+    expansion: never
+  - item: nll_cosine_severity_diagnostics
+    description: "Frozen rec-only V_tune NLL/cosine severity calibration; no coalition Shapley sweep"
+    datasets: [ml1m, beauty]
+    seeds: recipe_alpha                 # frozen checkpoints 901–903
+    allocation: none
+  - item: ranking_confirmation_aligned_severity
+    description: "Pilot seed 1002 ranking confirmation: three matched singletons + matched grand"
+    datasets: [ml1m, beauty]
+    seeds: [1002]
+    allocation: none
+  - item: beauty_k4_game_a_mc
+    description: "Beauty K=4 Game A with dropout player — antithetic permutation MC"
+    datasets: [beauty]
+    seeds: k4_beauty_mc                 # 3001–3005
+    coalitions: antithetic_prefix_paths_plus_grand_loo
+    max_unique_models_per_seed: 10
+    allocation: mc_approximate
+    exact_interactions: false
+  - item: eta_gamma_beta_protect_diagnostics
+    description: "eta/gamma/beta and protect-last-1/2 sweeps: frozen rec-only NLL/cosine only"
+    datasets: [ml1m, beauty]
+    allocation: none
+  - item: singleton_lambda_stress
+    description: "Bounded singleton lambda_cl stress test {0.05,0.1,0.2}, V_tune, seed 901"
+    datasets: [ml1m, beauty]
+    seeds: [901]
+  - item: cached_ranking_adapter
+    description: "Optional cached ranking-adapter surrogate appendix (ranking path + rec loss)"
+    datasets: [beauty]
+    seeds: [4001]
+    optional: true
+  - item: exact_vs_mc_audit
+    description: "Sampled-permutation MC audit against exact K=3 tables; no training"
+    datasets: [ml1m, beauty]
+    samples: [2, 4, 8, 16, 32]
+
+# No-go conditions (implementation-level failures if violated).
+no_go:
+  - identical_coalition_rankings
+  - efficiency_failure
+  - per_user_consistency_failure
+  - split_leakage
+  - excluded_view_leakage
+  - projection_only_surrogate_as_primary
+  - warm_start_from_grand_checkpoint
+  - unequal_optimizer_budgets
+  - test_affects_selection
+  - invalid_half_pair_removal_formula

@@ -1,0 +1,57 @@
+# SHAPER — archive freeze manifest.
+# Written once by the ARCHIVE_FREEZE stage, AFTER the two excluded pilot seeds
+# and the pilot-informed amendment. No confirmatory model may run before this
+# file is frozen (status: frozen).
+#
+# Items with `locked_at_protocol_level: true` are fixed by the registered
+# protocol itself; items with `null` values are filled at archive time.
+status: not_frozen                       # frozen only after pilots + amendment
+frozen_at: null                          # ISO timestamp
+amendment_reference: null                # pilot-informed amendment label
+
+seed_registry_file: configs/seeds.yaml
+scope_file: configs/scope.yaml
+statistics_file: configs/statistics.yaml
+
+roles:                                   # locked at protocol level
+  tune: 0.20
+  game: 0.60
+  select: 0.20
+  source: "stable persisted salted hash, stratified by dataset and frozen history-length quartiles"
+
+thresholds:
+  delta_phi: 0.003
+  delta_interaction: 0.003
+  delta_action: 0.003
+
+selected_recipe:                         # frozen by RECIPE_CALIBRATION on V_tune
+  ml1m:
+    learning_rate: null
+    steps: null
+    lambda_cl: null
+    tau: null
+  beauty:
+    learning_rate: null
+    steps: null
+    lambda_cl: null
+    tau: null
+  recipe_hash_ml1m: null
+  recipe_hash_beauty: null
+
+data_hashes:
+  ml1m: null
+  beauty: null
+  data_manifest_hash_ml1m: null
+  data_manifest_hash_beauty: null
+
+pilot:
+  excluded_seeds: [1001, 1002]
+  archive_label: pilot-informed
+  appendix_j: null                       # realized counts / variance table hash
+
+locked_diagnostics:
+  game_b_seeds: [2001, 2002, 2003]
+  cosine_diagnostic_seeds: [2001, 2002, 2003]
+  k4_beauty_mc_seeds: [3001, 3002, 3003, 3004, 3005]
+  k4_max_unique_models_per_seed: 10
+  nondeterminism_floor_repeat_seed: 2001
