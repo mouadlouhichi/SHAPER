@@ -89,7 +89,7 @@ def test_notebook_exists_and_is_valid():
         assert section in joined, f"notebook section missing: {section}"
     # the notebook must call package functions, not duplicate logic
     code = "\n".join("".join(cell.get("source", "")) for cell in nb.cells if cell.get("cell_type") == "code")
-    for marker in ("run_all", "status()", "estimate_cost()", "resume()"):
+    for marker in ("run_all", "status()", "estimate_cost()", "resume()", "def stage("):
         assert marker in code, f"notebook missing helper: {marker}"
     # the FIRST code cell must bootstrap sys.path (regression: Jupyter does not
     # put the repo root on sys.path; `from scripts import run_all` failed with

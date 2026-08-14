@@ -63,6 +63,27 @@ def archive_is_frozen(cfg) -> bool:
     return all(sel.get(k) is not None for k in ("learning_rate", "steps", "lambda_cl", "tau"))
 
 
+def _pilot_tables_exist(cfg, args) -> bool:
+    """The two excluded pilot seeds must have completed for the run (the
+    archive is pilot-informed, spec B.7)."""
+    if not args.run_id:
+        return False
+    for seed in cfg.seeds["pilots"]:
+        table = os.path.join(
+            cfg.paths["results"], args.run_id, "coalition_tables", f"pilot_seed{seed}.json"
+        )
+        if not os.path.exists(table):
+            return False
+    return True
+
+
+def _gate_message(action: str, why: str, how: str) -> str:
+    """Single consistent format for staged-preregistration gate refusals, so
+    the notebook (which catches SystemExit) and the CLI (which prints it)
+    both show an actionable message."""
+    return f"STAGE GATE — {action} refused: {why}\n    {how}"
+
+
 def _require_archive(cfg, args) -> None:
     if archive_is_frozen(cfg):
         return
@@ -70,11 +91,14 @@ def _require_archive(cfg, args) -> None:
         print("WARNING: running before ARCHIVE_FREEZE (--allow-before-archive). "
               "This run is NOT confirmatory.")
         return
-    raise SystemExit(
-        "REFUSED: confirmatory models cannot run before the pilot-informed "
-        "archive exists. Run: --stage data, --stage recipe, --stage pilot, "
-        "--stage amendment, --stage archive, then retry."
-    )
+    raise SystemExit(_gate_message(
+        "confirmatory stage",
+        "confirmatory models cannot run before the pilot-informed archive exists "
+        "(spec B.7: RECIPE_CALIBRATION -> pilots -> amendment -> ARCHIVE_FREEZE -> confirmatory)",
+        "run the stages in order: --stage data, --stage recipe, --stage pilot, "
+        "--stage amendment, --stage archive, then retry. "
+        "(Notebook: Sections 5, 7, 8, 9, then this section.)",
+    ))
 
 
 def run_stage(name: str, cfg, args) -> int:
@@ -111,22 +135,46 @@ def run_stage(name: str, cfg, args) -> int:
         print(f"PILOT_AMENDMENT recorded at {out_path}")
         return 0
     if name == "archive":
-        recipe = {"learning_rate": 5e-4, "steps": 60, "lambda_cl": 0.1, "tau": 0.1}
+        # Idempotency: if the archive is already frozen for this dataset,
+        # re-running the cell is a no-op (it must not demand a fresh
+        # calibration from the current run).
+        if archive_is_frozen(cfg):
+            print(f"ARCHIVE_FREEZE: {cfg.dataset} already frozen ({freeze_path(cfg)}); no-op")
+            return 0
+        # 1. The frozen recipe must come from a completed calibration artifact.
         if args.run_id:
             recipe_path = os.path.join(cfg.paths["results"], args.run_id, "recipe", "calibration.json")
             if os.path.exists(recipe_path):
                 with open(recipe_path) as fh:
                     recipe = json.load(fh)["recipe"]
             else:
-                raise SystemExit(
-                    f"ARCHIVE_FREEZE requires a recipe calibration for run {args.run_id}; "
-                    "run --stage recipe first"
-                )
+                raise SystemExit(_gate_message(
+                    "ARCHIVE_FREEZE",
+                    f"no recipe calibration found for run '{args.run_id}' at {recipe_path}",
+                    f"run the recipe stage first: --stage recipe --run-id {args.run_id} "
+                    "(Notebook Section 7, with the same DATASET/RUN_ID). "
+                    "The archive freezes the V_tune-selected learning rate, step count, "
+                    "lambda_cl and tau; it cannot be produced from defaults.",
+                ))
         elif cfg.dataset != "synthetic":
-            raise SystemExit(
-                "ARCHIVE_FREEZE for real datasets requires --run-id of a completed "
-                "RECIPE_CALIBRATION run"
-            )
+            raise SystemExit(_gate_message(
+                "ARCHIVE_FREEZE",
+                "real datasets require --run-id of a completed RECIPE_CALIBRATION run",
+                "--stage recipe --run-id <run> (Notebook Section 7)",
+            ))
+        else:
+            recipe = {"learning_rate": 5e-4, "steps": 60, "lambda_cl": 0.1, "tau": 0.1}
+        # 2. spec B.7: the archive is PILOT-INFORMED — the two excluded pilot
+        #    seeds must have completed before the freeze.
+        if not _pilot_tables_exist(cfg, args):
+            raise SystemExit(_gate_message(
+                "ARCHIVE_FREEZE",
+                f"the pilot-informed archive requires the two excluded pilot seeds "
+                f"{cfg.seeds['pilots']} to have completed for run '{args.run_id}'",
+                "run the pilot stage first: --stage pilot (Notebook Section 8). "
+                "Pilot outcomes are excluded from confirmatory estimates but their "
+                "variance tables inform Appendix J, which the archive freezes.",
+            ))
         data_manifest = os.path.join(cfg.paths["data_processed"], cfg.dataset, "data_manifest.json")
         data_hash = None
         if os.path.exists(data_manifest):
@@ -146,7 +194,7 @@ def run_stage(name: str, cfg, args) -> int:
         with open(path, "w", encoding="utf-8") as fh:
             yaml.safe_dump(freeze, fh, sort_keys=True)
         # record the freeze in the run manifest (compliance evidence)
-        if args.run_id:
+        if args.run_id and os.path.isdir(os.path.join(cfg.paths["results"], args.run_id)):
             from shaper.artifacts import RunDirectory
 
             try:

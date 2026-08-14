@@ -111,7 +111,7 @@ def e2e(tmp_path_factory):
     from scripts import run_all
 
     assert not run_all.archive_is_frozen(cfg)
-    with pytest.raises(SystemExit, match="REFUSED"):
+    with pytest.raises(SystemExit, match="STAGE GATE.*confirmatory stage"):
         run_all.run_stage("game-a", cfg, args_for())
     # pilots (excluded seeds)
     train_coalitions.stage_pilot(cfg, data, run, args_for(), recipe, "cpu", "PILOT_1001_1002")

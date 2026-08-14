@@ -174,3 +174,12 @@ at the bottom.
     SciPy ≥ 1.18. This repository's verification suite was executed on Python
     3.11 with SciPy 1.17.1 (exact versions in `requirements.lock` and every
     run's `environment.json`); `requirements.txt` declares the spec ranges.
+13. **Stage-gate UX.** `scripts/run_all.py` enforces the staged
+    preregistration sequence (spec B.7): ARCHIVE_FREEZE refuses when the
+    run's recipe calibration artifact is missing AND when the two excluded
+    pilot seeds have not completed (the archive is pilot-informed), and
+    re-freezing an already-frozen dataset is an idempotent no-op. Gate
+    refusals use one `STAGE GATE — ...` message format naming the required
+    stage and notebook section; the notebook wraps every stage in a `stage()`
+    helper that catches `SystemExit` and prints the message instead of a raw
+    traceback (pinned by `tests/unit/test_run_all_gates.py`).
