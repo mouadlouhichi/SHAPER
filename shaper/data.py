@@ -63,6 +63,60 @@ def load_ml1m_raw(path: str) -> pd.DataFrame:
     return df
 
 
+# Canonical content fingerprint of the genuine MovieLens-100K u.data
+# (GroupLens, 1998): 100,000 ratings, 943 users, 1682 items, ratings 1..5,
+# first rows as published in the d2l documentation. Used to verify any
+# downloaded u.data (including mirror archives, which carry no published
+# archive checksum).
+ML100K_FINGERPRINT = {
+    "n_rows": 100_000,
+    "n_users": 943,
+    "n_items": 1682,
+    "first_rows": [
+        (196, 242, 3, 881250949),
+        (186, 302, 3, 891717742),
+        (22, 377, 1, 878887116),
+        (244, 51, 2, 880606923),
+        (166, 346, 1, 886397596),
+    ],
+}
+
+
+def load_ml100k_raw(path: str) -> pd.DataFrame:
+    """Parse MovieLens-100K u.data (tab-separated: user | item | rating | ts).
+
+    VERIFICATION/TEST dataset — not part of the registered study. The full
+    file is checked against the canonical content fingerprint before the
+    rating>=4 conversion.
+    """
+    df = pd.read_csv(
+        path, sep="\t", header=None, engine="python",
+        names=["user", "item", "rating", "timestamp"],
+    )
+    fp = ML100K_FINGERPRINT
+    problems = []
+    if len(df) != fp["n_rows"]:
+        problems.append(f"rows {len(df)} != {fp['n_rows']}")
+    if df["user"].nunique() != fp["n_users"]:
+        problems.append(f"users {df['user'].nunique()} != {fp['n_users']}")
+    if df["item"].nunique() != fp["n_items"]:
+        problems.append(f"items {df['item'].nunique()} != {fp['n_items']}")
+    if not df["rating"].between(1, 5).all():
+        problems.append("ratings outside 1..5")
+    head = list(df[["user", "item", "rating", "timestamp"]].itertuples(index=False, name=None))[:5]
+    if head != fp["first_rows"]:
+        problems.append(f"first rows {head} != canonical {fp['first_rows']}")
+    if problems:
+        raise RuntimeError(
+            "u.data failed the canonical MovieLens-100K content fingerprint: "
+            + "; ".join(problems)
+            + ". The file is not the genuine GroupLens ml-100k u.data."
+        )
+    df = df[df["rating"] >= 4][["user", "item", "timestamp"]].copy()
+    df["raw_row_id"] = np.arange(len(df))
+    return df
+
+
 def load_beauty_raw(path: str) -> pd.DataFrame:
     """Parse Amazon Reviews 2018 Beauty 5-core (json.gz). Every review positive."""
     chunks = pd.read_json(path, lines=True, compression="gzip", chunksize=100_000)

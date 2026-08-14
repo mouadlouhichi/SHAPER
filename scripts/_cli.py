@@ -25,7 +25,7 @@ from shaper.training import Recipe  # noqa: E402
 
 def base_parser(description: str) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=description)
-    p.add_argument("--dataset", choices=["ml1m", "beauty", "synthetic"], default="synthetic",
+    p.add_argument("--dataset", choices=["ml1m", "beauty", "ml100k", "synthetic"], default="synthetic",
                    help="dataset to operate on (default synthetic for tests)")
     p.add_argument("--run-id", default=None, help="results/runs/<run_id> to use/create")
     p.add_argument("--device", default=None, help="torch device (default: cuda if available else cpu)")
@@ -58,13 +58,15 @@ def resolve_recipe(cfg: Any, override: Optional[Dict[str, Any]] = None) -> Recip
             lambda_cl=float(t["lambda_cl"]),
             tau=float(t["tau"]),
         )
-    # try the frozen manifest (synthetic runs freeze into the results dir)
+    # try the frozen manifest (verification datasets — synthetic, ml100k —
+    # freeze into the results dir; the registered datasets freeze the
+    # configs/manifest_freeze.yaml archive)
     from shaper.config import load_yaml
 
-    if cfg.dataset == "synthetic":
-        freeze_path = os.path.join(cfg.paths["results"], "freeze-synthetic-synthetic.yaml")
-    else:
+    if cfg.dataset in ("ml1m", "beauty"):
         freeze_path = os.path.join(cfg.paths["configs"], "manifest_freeze.yaml")
+    else:
+        freeze_path = os.path.join(cfg.paths["results"], f"freeze-synthetic-{cfg.dataset}.yaml")
     if not os.path.exists(freeze_path):
         raise RuntimeError(
             f"recipe not frozen for {cfg.dataset}; run RECIPE_CALIBRATION and "

@@ -141,6 +141,11 @@ def load_run_config(
     for key in ("nondeterminism_floor_repeat_seed", "mc_permutation_seed_offset"):
         if key in seeds_data:
             seeds[key] = seeds_data[key]
+    # VERIFICATION-ONLY datasets (e.g. ml100k) declare their own seed set in
+    # the dataset config; the frozen scientific registry in seeds.yaml is
+    # never touched.
+    if raw["dataset"].get("verification_only"):
+        seeds = dict(raw.get("test_seeds", seeds))
     statistics = load_yaml(os.path.join(cfgdir, "statistics.yaml"))
     scope = load_yaml(os.path.join(cfgdir, "scope.yaml"))
 

@@ -26,14 +26,14 @@ from shaper.power import pilot_informed_table, variance_grid_table  # noqa: E402
 from shaper.stats import hierarchical_bootstrap_ci, planning_half_width  # noqa: E402
 
 
-def pilot_variances(run, data, dataset):
+def pilot_variances(run, data, cfg):
     """Seed variance of raw Shapley values across the excluded pilot seeds."""
     from shaper.game import load_coalition_table
     from shaper.shapley import exact_shapley
     from shaper import MAIN_PLAYERS
 
     per_seed = []
-    for seed in (1001, 1002):
+    for seed in cfg.seeds["pilots"]:
         path = os.path.join(run.root, "coalition_tables", f"pilot_seed{seed}.json")
         if not os.path.exists(path):
             continue
@@ -67,7 +67,7 @@ def main() -> int:
     grid = cfg.statistics["planning"]["variance_grid"]
     deltas = cfg.statistics["thresholds"]
 
-    per_seed, variances = pilot_variances(run, data, cfg.dataset)
+    per_seed, variances = pilot_variances(run, data, cfg)
     if per_seed:
         # pilot-informed: estimate sigma_user from the two pilot seeds
         sigma_user_pilot = float(np.sqrt(np.mean(variances)))
@@ -86,7 +86,7 @@ def main() -> int:
     table["status"] = status
     table["N_game"] = N_game
     run.write_json("metrics", "appendix_j_power.json", table)
-    run.stage_status("POWER", "completed", wall_seconds=round(time.time() - t0, 2), status=status)
+    run.stage_status("POWER", "completed", wall_seconds=round(time.time() - t0, 2), power_status=status)
     run.logger.stage_end("POWER", dataset=cfg.dataset)
     print(json.dumps(table, indent=2, sort_keys=True, default=str))
     return 0

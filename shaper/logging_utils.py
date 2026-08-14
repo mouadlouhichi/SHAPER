@@ -75,13 +75,43 @@ def _coerce_coalition(coalition: Any) -> Any:
     return str(coalition)
 
 
-class StructuredLogger:
-    """Append-only JSON-lines logger with a stable event schema."""
+def render_console(rec: Dict[str, Any]) -> str:
+    """Human-readable single-line rendering of one structured event.
 
-    def __init__(self, log_dir: str, run_id: str, name: str = "events"):
+    Layout: [HH:MM:SS] STAGE | event | status | key=value ...  (fields like
+    `coalition` are joined with '+' for readability).
+    """
+    ts = rec.get("timestamp", "")[11:19] or "??:??:??"
+    stage = str(rec.get("stage") or "-")
+    event = str(rec.get("event") or "-")
+    status = str(rec.get("status") or "info")
+    parts = [f"[{ts}] {stage:<20} | {event:<28} | {status}"]
+    for key, value in rec.items():
+        if key in ("timestamp", "run_id", "stage", "event", "status"):
+            continue
+        if value is None:
+            continue
+        if isinstance(value, list):
+            value = "+".join(str(v) for v in value)
+        if isinstance(value, float):
+            value = f"{value:.6g}"
+        parts.append(f"{key}={value}")
+    return " | ".join(parts)
+
+
+class StructuredLogger:
+    """Append-only JSON-lines logger with a stable event schema.
+
+    Writes machine-readable events to `<log_dir>/<name>.jsonl` AND (unless
+    `console=False`) a human-readable line to stdout, so every stage's
+    activity is visible while it runs.
+    """
+
+    def __init__(self, log_dir: str, run_id: str, name: str = "events", console: bool = True):
         os.makedirs(log_dir, exist_ok=True)
         self.path = os.path.join(log_dir, f"{name}.jsonl")
         self.run_id = run_id
+        self.console = console
 
     def log(self, *, stage: str, event: str, status: str = "info", **fields: Any) -> Dict[str, Any]:
         rec = make_event(run_id=self.run_id, stage=stage, event=event, status=status, **fields)
@@ -91,6 +121,9 @@ class StructuredLogger:
                 fh.write(line + "\n")
                 fh.flush()
                 os.fsync(fh.fileno())
+        if self.console:
+            with _LOG_LOCK:
+                print(render_console(rec), flush=True)
         return rec
 
     # Convenience shorthands -------------------------------------------------

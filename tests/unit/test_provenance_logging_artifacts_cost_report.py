@@ -172,3 +172,29 @@ def test_report_figures(tmp_path):
                              str(tmp_path / "fig2.png"))
     p2 = figure_alpha_curve([0.0, 0.25, 0.5], [0.30, 0.31, 0.29], 0.25, str(tmp_path / "fig6.png"))
     assert os.path.isfile(p1) and os.path.isfile(p2)
+
+
+def test_console_log_rendering():
+    from shaper.logging_utils import render_console
+
+    rec = {
+        "timestamp": "2026-08-14T17:48:29+00:00",
+        "run_id": "r", "stage": "PRIMARY_GAME_A", "event": "training_step",
+        "status": "info", "dataset": "ml100k", "seed": 2001,
+        "coalition": ["crop", "mask"], "policy": "game_a", "loss": 1.2345678,
+    }
+    line = render_console(rec)
+    assert "[17:48:29]" in line
+    assert "PRIMARY_GAME_A" in line and "training_step" in line
+    assert "dataset=ml100k" in line and "seed=2001" in line
+    assert "coalition=crop+mask" in line and "policy=game_a" in line
+    assert "loss=1.23457" in line  # floats rendered compactly
+    assert "run_id" not in line.split("|")[1]  # canonical fields not duplicated
+
+
+def test_structured_logger_console_can_be_silenced(tmp_path):
+    from shaper.logging_utils import StructuredLogger
+
+    logger = StructuredLogger(str(tmp_path), run_id="r", console=False)
+    logger.info("PREFLIGHT", "silent")
+    assert os.path.isfile(os.path.join(str(tmp_path), "events.jsonl"))

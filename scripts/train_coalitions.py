@@ -138,8 +138,12 @@ def stage_game_b(cfg, data, run, args, recipe, device, stage_name):
 
 
 def stage_k4_mc(cfg, data, run, args, recipe, device, stage_name):
-    if cfg.dataset != "beauty" and cfg.dataset != "synthetic":
-        raise SystemExit("K4_BEAUTY_MC is registered for Beauty only")
+    if cfg.dataset != "beauty" and cfg.dataset != "synthetic" \
+            and not cfg.raw["dataset"].get("k4_mc_allowed"):
+        raise SystemExit(
+            "K4_BEAUTY_MC is registered for Beauty only "
+            "(ml100k/synthetic allow it purely to exercise the code path)"
+        )
     seeds = args.seeds or cfg.seeds["k4_beauty_mc"]
     players = K4_PLAYERS
     policy = "game_a"

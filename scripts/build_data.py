@@ -59,6 +59,17 @@ def build(cfg, args) -> dict:
             raw_path = _extract_ml1m_zip(cfg, zip_path)
             raw_download_info = dl
         raw = load_ml1m_raw(raw_path)
+    elif args.dataset == "ml100k":
+        if args.raw_path:
+            raw_path = args.raw_path
+        else:
+            dl = ensure_raw_dataset("ml100k", cfg.paths["data_raw"], download=args.download,
+                                    force=args.force, logger=logger)
+            raw_path = _extract_ml100k_u_data(cfg, dl["path"])
+            raw_download_info = dl
+        from shaper.data import load_ml100k_raw
+
+        raw = load_ml100k_raw(raw_path)
     elif args.dataset == "beauty":
         if args.raw_path:
             raw_path = args.raw_path
@@ -82,6 +93,30 @@ def build(cfg, args) -> dict:
         raw_download_info=raw_download_info,
     )
     return manifest
+
+
+def _extract_ml100k_u_data(cfg, archive_path: str) -> str:
+    """Extract u.data from the canonical zip OR the mirror tarball
+    (idempotent)."""
+    out_path = os.path.join(cfg.paths["data_raw"], "ml-100k", "u.data")
+    if os.path.exists(out_path):
+        return out_path
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    if archive_path.endswith(".zip"):
+        import zipfile
+
+        with zipfile.ZipFile(archive_path) as zf:
+            member = [n for n in zf.namelist() if n.endswith("/u.data")][0]
+            data = zf.read(member)
+    else:  # mirror tarball from codeload.github.com
+        import tarfile
+
+        with tarfile.open(archive_path, "r:gz") as tf:
+            member = [n for n in tf.getnames() if n.endswith("/u.data")][0]
+            data = tf.extractfile(member).read()
+    with open(out_path, "wb") as fh:
+        fh.write(data)
+    return out_path
 
 
 def _extract_ml1m_zip(cfg, zip_path: str) -> str:

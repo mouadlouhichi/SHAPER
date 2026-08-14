@@ -101,7 +101,7 @@ def _require_archive(cfg, args) -> None:
     ))
 
 
-def run_stage(name: str, cfg, args) -> int:
+def _run_stage_inner(name: str, cfg, args) -> int:
     ds = ["--dataset", cfg.dataset]
     run_id = ["--run-id", args.run_id] if args.run_id else []
     common = ds + run_id
@@ -237,6 +237,23 @@ def run_stage(name: str, cfg, args) -> int:
     raise SystemExit(f"unknown stage {name}")
 
 
+def run_stage(name: str, cfg, args) -> int:
+    """Execute one stage with visible START/END banners and timing.
+
+    Every stage additionally streams structured events to the run's
+    `logs/events.jsonl` AND human-readable lines to the console (the
+    StructuredLogger console layer)."""
+    banner = "=" * 72
+    t0 = time.time()
+    print(f"\n{banner}\nSTAGE {name} | dataset={cfg.dataset} "
+          f"run={getattr(args, 'run_id', None) or '-'}\n{banner}", flush=True)
+    rc = _run_stage_inner(name, cfg, args)
+    elapsed = time.time() - t0
+    status = "OK" if rc in (0, None) else f"FAILED/REFUSED (rc={rc})"
+    print(f"{banner}\nSTAGE {name} -> {status} in {elapsed:.1f}s\n{banner}", flush=True)
+    return rc
+
+
 STAGE_ORDER = [
     "preflight", "data", "recipe", "pilot", "pilot-validation", "amendment",
     "archive", "game-a", "game-b", "severity", "k4-mc", "shapley", "loo",
@@ -254,7 +271,7 @@ def main() -> int:
     p.add_argument("--estimate-cost", action="store_true", help="budget estimate (planning only)")
     p.add_argument("--stage", default=None, help="execute one stage (see STAGE_ORDER)")
     p.add_argument("--resume", action="store_true", help="resume the run at the next incomplete stage")
-    p.add_argument("--dataset", choices=["ml1m", "beauty", "synthetic"], default="synthetic")
+    p.add_argument("--dataset", choices=["ml1m", "beauty", "ml100k", "synthetic"], default="synthetic")
     p.add_argument("--run-id", default=None)
     p.add_argument("--raw-path", default=None)
     p.add_argument("--download", action="store_true",

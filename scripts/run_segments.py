@@ -60,6 +60,8 @@ def main() -> int:
     args = p.parse_args()
 
     cfg = load_run_config(args.dataset)
+    if cfg.raw.get("segments_override"):
+        cfg.statistics["segments"].update(cfg.raw["segments_override"])
     data = frozen_data(cfg)
 
     from shaper.artifacts import RunDirectory

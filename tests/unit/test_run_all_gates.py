@@ -121,3 +121,39 @@ def test_notebook_gate_helper_catches_systemexit():
     )
     assert "except SystemExit" in cfg_cell.source
     assert "GATE:" in cfg_cell.source
+
+
+def test_resolve_recipe_verification_freeze_path(tmp_path):
+    """ml100k (verification dataset) resolves its frozen recipe from the
+    results-dir freeze file, exactly where run_all.freeze_path writes it."""
+    from scripts import _cli
+    from shaper.config import load_run_config
+
+    cfg = load_run_config("ml100k")
+    cfg.paths["results"] = str(tmp_path / "results")
+    freeze_path = run_all.freeze_path(cfg)
+    assert freeze_path.endswith("freeze-synthetic-ml100k.yaml")
+    os.makedirs(os.path.dirname(freeze_path), exist_ok=True)
+    import yaml
+
+    with open(freeze_path, "w") as fh:
+        yaml.safe_dump({
+            "status": "frozen",
+            "selected_recipe": {
+                "ml100k": {"learning_rate": 1e-3, "steps": 16, "lambda_cl": 0.1, "tau": 0.1}
+            },
+        }, fh)
+    recipe = _cli.resolve_recipe(cfg)
+    assert recipe.steps == 16 and recipe.tau == 0.1
+
+
+def test_ml100k_seed_overrides_registry():
+    """The ml100k verification seed set comes from its own config and never
+    touches the frozen scientific registry in configs/seeds.yaml."""
+    from shaper.config import load_run_config, load_yaml
+
+    cfg = load_run_config("ml100k")
+    assert cfg.seeds["confirmatory_game_a"] == [2001]
+    assert cfg.seeds["pilots"] == [1001, 1002]
+    registry = load_yaml(os.path.join(run_all.REPO_ROOT, "configs", "seeds.yaml"))["registry"]
+    assert registry["confirmatory_game_a"] == [2001, 2002, 2003, 2004, 2005]

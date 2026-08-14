@@ -54,6 +54,31 @@ SOURCES: Dict[str, Dict[str, Any]] = {
             "never committed (data/raw/* is gitignored)."
         ),
     },
+    "ml100k": {
+        "filename": "ml-100k.zip",
+        "urls": [
+            "https://files.grouplens.org/datasets/movielens/ml-100k.zip",
+        ],
+        # published GroupLens checksum (d2l DATA_HUB registry of the official
+        # file; SHA-1, 40 hex chars)
+        "sha1": "cd4dcac4241c8a4ad7badc7ca635da8a69dddb83",
+        # fallback mirror: a GitHub repo with the complete extracted ml-100k
+        # files (u.data et al.). Mirror archives carry NO published checksum,
+        # so they are verified by size + magic bytes, and the extracted
+        # u.data is content-verified by the canonical fingerprint in
+        # shaper.data.load_ml100k_raw (100,000 rows; users 1..943; items
+        # 1..1682; ratings 1..5; canonical first rows).
+        "mirror_urls": [
+            "https://codeload.github.com/SudeshGowda/ml-100k-dataset/tar.gz/main",
+        ],
+        "mirror_filename": "ml-100k-mirror.tar.gz",
+        "min_size_bytes": 1_000_000,
+        "kind": "zip",
+        "license_note": (
+            "GroupLens MovieLens-100K (VERIFICATION/TEST dataset — not part of "
+            "the registered study). Archive downloaded locally; never committed."
+        ),
+    },
     "beauty": {
         "filename": "Beauty_5.json.gz",
         "urls": [
@@ -87,11 +112,13 @@ def source_for(dataset: str) -> Dict[str, Any]:
 def _hash_file(path: str) -> Dict[str, str]:
     h256 = hashlib.sha256()
     hmd5 = hashlib.md5()
+    hsha1 = hashlib.sha1()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(CHUNK), b""):
             h256.update(chunk)
             hmd5.update(chunk)
-    return {"sha256": h256.hexdigest(), "md5": hmd5.hexdigest()}
+            hsha1.update(chunk)
+    return {"sha256": h256.hexdigest(), "md5": hmd5.hexdigest(), "sha1": hsha1.hexdigest()}
 
 
 def _magic_ok(path: str, kind: str) -> bool:
@@ -104,8 +131,13 @@ def _magic_ok(path: str, kind: str) -> bool:
     raise ValueError(f"unknown archive kind {kind!r}")
 
 
-def _verify(path: str, source: Dict[str, Any]) -> Dict[str, Any]:
-    """Verify a downloaded archive; returns {ok, reason, hashes}."""
+def _verify(path: str, source: Dict[str, Any], require_hash: bool = True) -> Dict[str, Any]:
+    """Verify a downloaded archive; returns {ok, reason, hashes}.
+
+    `require_hash=False` (mirror downloads) checks size + magic bytes only
+    and records the computed SHA-256; content-level verification is then the
+    loader's responsibility (canonical fingerprint at parse time).
+    """
     size = os.path.getsize(path)
     if size < int(source.get("min_size_bytes", 0)):
         return {
@@ -113,13 +145,27 @@ def _verify(path: str, source: Dict[str, Any]) -> Dict[str, Any]:
             "reason": f"size {size} below minimum {source['min_size_bytes']}",
             "hashes": {},
         }
-    if not _magic_ok(path, str(source["kind"])):
-        return {"ok": False, "reason": f"magic bytes mismatch (expected {source['kind']})", "hashes": {}}
+    # mirror archives use a different container (e.g. tar.gz); derive the
+    # expected magic from the filename (the temp file keeps its ".part"
+    # suffix while being verified)
+    base = path[: -len(".part")] if path.endswith(".part") else path
+    if base.endswith(".tar.gz") or base.endswith(".tgz"):
+        kind = "gzip"
+    else:
+        kind = str(source["kind"])
+    if not _magic_ok(path, kind):
+        return {"ok": False, "reason": f"magic bytes mismatch (expected {kind})", "hashes": {}}
     hashes = _hash_file(path)
-    if source.get("md5") and hashes["md5"] != source["md5"]:
+    if require_hash and source.get("md5") and hashes["md5"] != source["md5"]:
         return {
             "ok": False,
             "reason": f"md5 mismatch: got {hashes['md5']}, expected {source['md5']}",
+            "hashes": hashes,
+        }
+    if require_hash and source.get("sha1") and hashes["sha1"] != source["sha1"]:
+        return {
+            "ok": False,
+            "reason": f"sha1 mismatch: got {hashes['sha1']}, expected {source['sha1']}",
             "hashes": hashes,
         }
     return {"ok": True, "reason": "verified", "hashes": hashes}
@@ -181,35 +227,50 @@ def download_dataset(
     source = source_for(dataset)
     os.makedirs(raw_dir, exist_ok=True)
     dest = os.path.join(raw_dir, source["filename"])
+    mirror_dest = os.path.join(raw_dir, source.get("mirror_filename", source["filename"]))
+    existing = dest if os.path.exists(dest) else (mirror_dest if os.path.exists(mirror_dest) else None)
     sidecar = dest + ".download.json"
 
-    if os.path.exists(dest) and not force:
-        check = _verify(dest, source)
+    if existing is not None and not force:
+        # canonical-named archives are held to the published checksum;
+        # mirror-named archives to size + magic bytes (content fingerprint
+        # verification happens at parse time)
+        check = _verify(
+            existing, source,
+            require_hash=os.path.basename(existing) == source["filename"],
+        )
         if check["ok"]:
             info: Dict[str, Any] = {
                 "verified": True,
                 "already_present": True,
                 "url": None,
                 "retrieved_at": None,
-                "size": os.path.getsize(dest),
+                "size": os.path.getsize(existing),
                 "hashes": check["hashes"],
                 "reason": "existing archive verified",
             }
-            if os.path.exists(sidecar):
-                with open(sidecar, encoding="utf-8") as fh:
+            sc = existing + ".download.json"
+            if os.path.exists(sc):
+                with open(sc, encoding="utf-8") as fh:
                     stored = json.load(fh)
                 info.update({k: v for k, v in stored.items() if k != "already_present"})
-            info["path"] = dest
+            info["path"] = existing
             return info
         raise RuntimeError(
-            f"existing {dest} failed verification ({check['reason']}); "
+            f"existing {existing} failed verification ({check['reason']}); "
             "re-run with force=True to re-download"
         )
 
     last_error: Optional[Exception] = None
+    # candidates: (url, dest, require_published_hash)
+    candidates: List[tuple] = [(u, dest, True) for u in source["urls"]]
+    for u in source.get("mirror_urls", []):
+        candidates.append(
+            (u, os.path.join(raw_dir, source.get("mirror_filename", source["filename"])), False)
+        )
     for attempt in range(2):
-        for url in source["urls"]:
-            part = dest + ".part"
+        for url, target, require_hash in candidates:
+            part = target + ".part"
             try:
                 written = (
                     _download_with_progress(url, part)
@@ -223,21 +284,26 @@ def download_dataset(
                     )
                 # verify the PARTIAL file BEFORE the atomic rename, so a bad
                 # download can never replace a good archive
-                check = _verify(part, source)
+                check = _verify(part, source, require_hash=require_hash)
                 if not check["ok"]:
                     raise RuntimeError(f"verification failed: {check['reason']}")
-                os.replace(part, dest)
+                os.replace(part, target)
                 info = {
                     "dataset": dataset,
-                    "path": dest,
+                    "path": target,
                     "url": url,
                     "retrieved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                    "size": os.path.getsize(dest),
+                    "size": os.path.getsize(target),
                     "hashes": check["hashes"],
                     "verified": True,
                     "already_present": False,
+                    "verification": (
+                        "published checksum" if require_hash
+                        else "archive integrity only (mirror); content fingerprint verified at parse time"
+                    ),
                     "license_note": source["license_note"],
                 }
+                sidecar = target + ".download.json"
                 with open(sidecar, "w", encoding="utf-8") as fh:
                     json.dump(info, fh, indent=2, sort_keys=True)
                 if logger is not None:
@@ -248,6 +314,7 @@ def download_dataset(
                         url=url,
                         size=info["size"],
                         sha256=check["hashes"]["sha256"][:16],
+                        verification=info["verification"],
                     )
                 return info
             except Exception as exc:  # noqa: BLE001 - try next URL / attempt
@@ -260,7 +327,7 @@ def download_dataset(
                     )
         time.sleep(2)
     raise RuntimeError(
-        f"failed to download {dataset} from {source['urls']}: {last_error}"
+        f"failed to download {dataset} from {source['urls'] + source.get('mirror_urls', [])}: {last_error}"
     )
 
 
@@ -275,7 +342,9 @@ def ensure_raw_dataset(
     or raise an actionable SystemExit telling the user how to obtain it."""
     source = source_for(dataset)
     dest = os.path.join(raw_dir, source["filename"])
-    if os.path.exists(dest):
+    mirror_dest = os.path.join(raw_dir, source.get("mirror_filename", source["filename"]))
+    present = dest if os.path.exists(dest) else (mirror_dest if os.path.exists(mirror_dest) else None)
+    if present is not None:
         return download_dataset(dataset, raw_dir, force=False, logger=logger)
     if not download:
         raise SystemExit(

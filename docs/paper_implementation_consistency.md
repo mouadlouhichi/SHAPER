@@ -187,11 +187,29 @@ at the bottom.
     detail): `build_data.py --download` streams the canonical archives
     (GroupLens `ml-1m.zip` with the published MD5 locked in
     `configs/ml1m.yaml`; UCSD `Beauty_5.json.gz` with recorded SHA-256 and a
-    fallback URL), verifies checksums BEFORE the atomic rename, writes a
-    `*.download.json` provenance sidecar, and never overwrites an existing
-    archive without `--force`. The frozen data manifest records this as
-    `raw_download`. Archives stay under `data/raw/` (gitignored, never
-    committed) per the datasets' licensing terms. Numeric MovieLens IDs are
-    canonicalized to strings in the persisted user/item maps (numpy-scalar
-    dict keys are not plain JSON), which is why `_jsonable` sanitizes every
-    manifest before writing.
+    fallback URL; GroupLens `ml-100k.zip` with the published SHA-1
+    `cd4dcac4…` plus a GitHub mirror fallback whose extracted `u.data` is
+    verified against the canonical content fingerprint), verifies checksums
+    BEFORE the atomic rename, writes a `*.download.json` provenance sidecar,
+    and never overwrites an existing archive without `--force`. The frozen
+    data manifest records this as `raw_download`. Archives stay under
+    `data/raw/` (gitignored, never committed) per the datasets' licensing
+    terms. Numeric MovieLens IDs are canonicalized to strings in the
+    persisted user/item maps (numpy-scalar dict keys are not plain JSON),
+    which is why `_jsonable` sanitizes every manifest before writing.
+15. **ml-100k verification dataset** (`configs/ml100k.yaml`): NOT part of
+    the registered study (which locks ML-1M and Beauty, spec A.3/A.15).
+    It carries its own verification-only seed set (2 pilots, 1 confirmatory
+    seed, shrunk recipe grids, reduced model d=32) and is the dataset the
+    complete staged pipeline is executed against as an integration check.
+    The frozen scientific seed registry (`configs/seeds.yaml`) is untouched
+    and its pinned hash is unchanged. Caveat: single-seed runs make the
+    interaction declaration rule degenerate (CI collapses to the point
+    estimate); results are pipeline-verification outputs, never reported as
+    scientific findings.
+16. **Console log layer** (`shaper/logging_utils.py`): every structured
+    event is written to the run's `logs/events.jsonl` AND rendered as a
+    human-readable `[HH:MM:SS] STAGE | event | key=value` line on stdout
+    (silence with `console=False`); `scripts/run_all.py` wraps each stage in
+    START/END banners with wall-clock time and return code, so each stage's
+    activity is visible while it runs.

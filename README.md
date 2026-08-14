@@ -113,6 +113,16 @@ pilot-informed archive freeze (spec B.7). Real datasets:
   then converts rating ≥ 4 → positive, iterative 5-core, temporal LOO,
   max length 200, full-catalog evaluation (the raw 1,000,209 rating count is
   never reported as the processed count).
+- **MovieLens-100K** (`--dataset ml100k`): a real-data **verification**
+  dataset that is NOT part of the registered study. `--download` fetches
+  `ml-100k.zip` from GroupLens (published SHA-1 `cd4dcac4…`) with a GitHub
+  mirror fallback; the extracted `u.data` is checked against the canonical
+  content fingerprint (100,000 rows, 943 users, 1,682 items, first rows).
+  `configs/ml100k.yaml` uses a reduced model/budget and a 1-confirmatory-seed
+  set so the complete staged pipeline runs in minutes — the full
+  data→recipe→pilots→archive→Game A→Game B→K=4 MC→Shapley→LOO→interactions→
+  severity→segments→power→Weight→Select→controls→final-test→audit chain has
+  been executed against it.
 - **Amazon-Beauty**: `python scripts/build_data.py --dataset beauty --download`
   streams `Beauty_5.json.gz` from the canonical UCSD host (fallback URL
   included), verifies archive integrity, and records the computed SHA-256 in
