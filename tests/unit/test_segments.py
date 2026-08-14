@@ -86,3 +86,54 @@ def test_same_permuted_map_across_seeds():
     out2 = label_permutation_test(per_seed, quartiles, n_permutations=50, seed=99)
     assert out1["T_mask_observed"] == out2["T_mask_observed"]
     assert out1["p_mask_one_sided"] == out2["p_mask_one_sided"]
+
+
+REPO_ROOT_FIXTURE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+class _FakeRun:
+    def __init__(self, root):
+        self.root = str(root)
+
+
+def test_per_user_table_storage_contract(tmp_path):
+    """Regression: per-user utilities live in the coalition-table companion
+    .npz (written by save_coalition_table, read by load_per_user_table AND by
+    scripts/run_segments.py). The old raw/ location must not be required."""
+    import numpy as np
+
+    from shaper.game import CoalitionValueRecord, load_per_user_table, save_coalition_table
+
+    records = [
+        CoalitionValueRecord(
+            dataset="synthetic", seed=2001, policy="game_a", coalition=(),
+            metrics_by_role={"game": {"ndcg": 0.1, "nll": 1.0}},
+            per_user_ndcg_game=[0.0, 0.0, 0.0],
+        ),
+        CoalitionValueRecord(
+            dataset="synthetic", seed=2001, policy="game_a", coalition=("crop",),
+            metrics_by_role={"game": {"ndcg": 0.12, "nll": 0.9}},
+            per_user_ndcg_game=[0.01, 0.02, 0.03],
+        ),
+    ]
+    table_dir = tmp_path / "coalition_tables"
+    table_dir.mkdir()
+    path = str(table_dir / "game_a_seed2001.json")
+    save_coalition_table(records, path)
+    assert os.path.exists(str(table_dir / "game_a_seed2001.npz"))
+    table = load_per_user_table(path)
+    assert table is not None
+    assert () in table and ("crop",) in table
+    assert list(table[("crop",)]) == [0.01, 0.02, 0.03]
+
+    # scripts/run_segments.py discovers tables from the coalition_tables dir
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "run_segments", os.path.join(REPO_ROOT_FIXTURE, "scripts", "run_segments.py")
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    tables, found = mod.load_per_user_tables(_FakeRun(tmp_path), None, "game_a", [2001])
+    assert found == [2001]
+    assert len(tables) == 1

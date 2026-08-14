@@ -36,14 +36,18 @@ from shaper.shapley import per_user_shapley  # noqa: E402
 
 
 def load_per_user_tables(run, data, policy: str, seeds):
+    from shaper.game import load_per_user_table
+
     tables = []
     found = []
     for seed in seeds:
-        path = os.path.join(run.root, "raw", f"per_user_{policy}_seed{seed}.npz")
+        path = os.path.join(run.root, "coalition_tables", f"{policy}_seed{seed}.json")
         if not os.path.exists(path):
             continue
-        z = np.load(path)
-        tables.append({tuple(sorted(k.split("+"))) if k != "empty" else (): z[k] for k in z.files})
+        table = load_per_user_table(path)
+        if table is None:
+            continue
+        tables.append(table)
         found.append(seed)
     return tables, found
 
