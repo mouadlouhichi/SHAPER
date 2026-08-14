@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shaper.config import load_run_config, load_yaml  # noqa: E402
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 
 
 def _run_script(name: str, *argv: str) -> int:
@@ -196,6 +197,8 @@ STAGE_ORDER = [
 
 
 def main() -> int:
+    # operate from the repository root regardless of the launch directory
+    os.chdir(REPO_ROOT)
     p = argparse.ArgumentParser(description="SHAPER staged pipeline")
     p.add_argument("--status", action="store_true", help="print stage status for the run/dataset")
     p.add_argument("--validate", action="store_true", help="run the full test suite")

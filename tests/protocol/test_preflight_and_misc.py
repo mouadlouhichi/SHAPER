@@ -116,6 +116,8 @@ def test_notebook_first_cell_imports_from_repo_cwds(tmp_path):
         + "from shaper.config import load_run_config\n"
         + "from shaper.provenance import environment_record\n"
         + "from shaper.schedules import configure_determinism\n"
+        + "from shaper.provenance import file_hash\n"
+        + "file_hash(shaper.PROTOCOL_SPEC)\nfile_hash(shaper.PAPER_SPEC)\n"
         + "print('IMPORTS OK')\n"
     )
     for cwd in (

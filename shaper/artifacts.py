@@ -120,7 +120,8 @@ class RunDirectory:
             {
                 "determinism": _determinism_flags(),
                 "python_target": "3.12 (spec); verified interpreter recorded in environment.json",
-            }
+            },
+            cwd=self.repo_root,
         )
         with open(os.path.join(self.root, "environment.json"), "w", encoding="utf-8") as fh:
             json.dump(env, fh, indent=2, sort_keys=True)
@@ -206,7 +207,7 @@ class RunDirectory:
         return self.write_markdown("", "summary.md", render_summary_markdown(summary))
 
     def write_reproducibility_report(self, cfg: RunConfig, extra: Optional[Dict[str, Any]] = None) -> str:
-        env = environment_record(_determinism_flags())
+        env = environment_record(_determinism_flags(), cwd=self.repo_root)
         lines = [
             "# Reproducibility report",
             "",

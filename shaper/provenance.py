@@ -69,24 +69,29 @@ def recipe_hash(recipe: Dict[str, Any], salt: str = "") -> str:
     return stable_hash(recipe, salt="recipe" + salt)
 
 
-def repository_info() -> Dict[str, Any]:
-    """Baseline repository commit and dirty state (empty if not a git repo)."""
+def repository_info(cwd: Optional[str] = None) -> Dict[str, Any]:
+    """Baseline repository commit and dirty state (empty if not a git repo).
+
+    `cwd` anchors the git commands; callers outside the repository must pass
+    the repository root explicitly (subprocess inherits the caller's cwd
+    otherwise).
+    """
     info: Dict[str, Any] = {"commit": None, "dirty": None, "branch": None}
     try:
         info["commit"] = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, cwd=cwd
         ).stdout.strip()
     except Exception as exc:  # pragma: no cover - environment dependent
         info["commit_error"] = str(exc)
     try:
         info["branch"] = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True, cwd=cwd
         ).stdout.strip()
     except Exception as exc:  # pragma: no cover
         info["branch_error"] = str(exc)
     try:
         dirty = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True, cwd=cwd
         ).stdout
         info["dirty"] = bool(dirty.strip())
     except Exception as exc:  # pragma: no cover
@@ -94,8 +99,12 @@ def repository_info() -> Dict[str, Any]:
     return info
 
 
-def environment_record(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Machine/hardware/version record required in every run manifest."""
+def environment_record(
+    extra: Optional[Dict[str, Any]] = None, cwd: Optional[str] = None
+) -> Dict[str, Any]:
+    """Machine/hardware/version record required in every run manifest.
+
+    `cwd` anchors the git provenance commands (repository root)."""
     import torch  # imported lazily so provenance can be used pre-install
 
     env: Dict[str, Any] = {
@@ -120,7 +129,7 @@ def environment_record(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]
             env[f"{name}_version"] = getattr(mod, "__version__", "unknown")
         except Exception:  # pragma: no cover
             env[f"{name}_version"] = "missing"
-    env.update(repository_info())
+    env.update(repository_info(cwd=cwd))
     if extra:
         env.update(extra)
     return env

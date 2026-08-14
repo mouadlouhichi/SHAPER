@@ -14,6 +14,10 @@ from typing import Any, Dict, Optional
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+# Scripts operate on absolute paths derived from the repository root; run
+# them with the repo as the working directory so provenance (git commit/dirty
+# state) and any relative reads are correct regardless of the launch cwd.
+os.chdir(REPO_ROOT)
 
 from shaper.config import load_run_config  # noqa: E402
 from shaper.training import Recipe  # noqa: E402

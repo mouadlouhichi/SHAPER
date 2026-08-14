@@ -12,10 +12,19 @@ Extension: Beauty K=4 Game A, antithetic permutation Monte Carlo,
 diagnostics only; no additional coalition Shapley sweep.
 """
 
+import os as _os
+
 __version__ = "1.0.0"
 
-PROTOCOL_SPEC = "specs/SHAPER_Implementation_Spec.md"
-PAPER_SPEC = "specs/SHAPER_Paper_Structure.md"
+# Absolute paths (independent of the caller's working directory) so the
+# notebook and scripts can read the spec files from anywhere.
+_HERE = _os.path.dirname(_os.path.abspath(__file__))
+PROTOCOL_SPEC = _os.path.normpath(
+    _os.path.join(_HERE, "..", "specs", "SHAPER_Implementation_Spec.md")
+)
+PAPER_SPEC = _os.path.normpath(
+    _os.path.join(_HERE, "..", "specs", "SHAPER_Paper_Structure.md")
+)
 
 # Main K=3 players, in fixed display/tie order.
 MAIN_PLAYERS = ("crop", "mask", "reorder")
