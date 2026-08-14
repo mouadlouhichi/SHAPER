@@ -91,6 +91,47 @@ def test_notebook_exists_and_is_valid():
     code = "\n".join("".join(cell.get("source", "")) for cell in nb.cells if cell.get("cell_type") == "code")
     for marker in ("run_all", "status()", "estimate_cost()", "resume()"):
         assert marker in code, f"notebook missing helper: {marker}"
+    # the FIRST code cell must bootstrap sys.path (regression: Jupyter does not
+    # put the repo root on sys.path; `from scripts import run_all` failed with
+    # ModuleNotFoundError before this bootstrap existed)
+    first_code = next(c for c in nb.cells if c.cell_type == "code")
+    for marker in ("REPO_ROOT", "sys.path", "_is_repo_root"):
+        assert marker in first_code.source, f"notebook bootstrap missing: {marker}"
+
+
+def test_notebook_first_cell_imports_from_repo_cwds(tmp_path):
+    """Execute the notebook's first cell in a subprocess launched from the
+    notebooks/ directory and from a sibling directory: `from scripts import
+    run_all` and the shaper imports must succeed (the user-reported failure
+    mode)."""
+    import nbformat
+    import subprocess
+
+    path = os.path.join(REPO_ROOT, "notebooks", "run_all.ipynb")
+    nb = nbformat.read(path, as_version=4)
+    first_code = next(c for c in nb.cells if c.cell_type == "code").source
+    script = (
+        first_code
+        + "\nimport shaper\nfrom scripts import run_all\n"
+        + "from shaper.config import load_run_config\n"
+        + "from shaper.provenance import environment_record\n"
+        + "from shaper.schedules import configure_determinism\n"
+        + "print('IMPORTS OK')\n"
+    )
+    for cwd in (
+        os.path.join(REPO_ROOT, "notebooks"),
+        os.path.join(REPO_ROOT, "docs"),
+        os.path.dirname(REPO_ROOT),  # repo's parent directory
+    ):
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            timeout=300,
+        )
+        assert result.returncode == 0, f"cwd={cwd}: {result.stderr}"
+        assert "IMPORTS OK" in result.stdout
 
 
 def test_structured_logging_canonical_schema(tmp_path):

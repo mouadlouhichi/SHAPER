@@ -161,7 +161,16 @@ at the bottom.
     `scripts/_cli.py`** are engineering-detail modules beyond the spec's
     module list (configuration loading, budget estimation, compliance
     registry, CLI helpers); they hold no scientific logic.
-11. **Reference environment.** The registered environment is Python 3.12 with
+11. **Notebook sys.path bootstrap.** `notebooks/run_all.ipynb` opens with a
+    bootstrap cell that locates the repository root (package location, cwd
+    ancestors, or immediate subdirectories) and inserts it into `sys.path`,
+    because Jupyter does not do this automatically. Without it, the first
+    cell failed with `ModuleNotFoundError: No module named 'scripts'`; the
+    fix is pinned by
+    `tests/protocol/test_preflight_and_misc.py::test_notebook_first_cell_imports_from_repo_cwds`.
+    A trivial `scripts/__init__.py` makes `from scripts import ...` a
+    regular package import under the repo root.
+12. **Reference environment.** The registered environment is Python 3.12 with
     SciPy ≥ 1.18. This repository's verification suite was executed on Python
     3.11 with SciPy 1.17.1 (exact versions in `requirements.lock` and every
     run's `environment.json`); `requirements.txt` declares the spec ranges.
