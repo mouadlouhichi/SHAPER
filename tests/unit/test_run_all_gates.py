@@ -103,9 +103,10 @@ def test_confirmatory_stage_refuses_before_archive(gate_cfg):
         run_all.run_stage("game-a", gate_cfg, _args("run-1"))
     assert "STAGE GATE" in str(exc.value)
     assert "archive" in str(exc.value).lower()
-    # --allow-before-archive downgrades to a warning (labeled non-confirmatory)
-    rc = run_all.run_stage("game-a", gate_cfg, _args("run-1", allow_before_archive=True))
-    assert rc != 0  # the underlying training run still has nothing to do here
+    # --allow-before-archive downgrades to a warning (labeled non-confirmatory);
+    # the gate itself passes (the training stage then runs in its own process,
+    # which is exercised by the synthetic end-to-end suite)
+    assert run_all._require_archive(gate_cfg, _args("run-1", allow_before_archive=True)) is None
 
 
 def test_notebook_gate_helper_catches_systemexit():

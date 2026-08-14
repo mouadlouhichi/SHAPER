@@ -111,6 +111,7 @@ def run_stage(name: str, cfg, args) -> int:
     if name == "data":
         return _run_script("build_data.py", *common,
                            *(["--raw-path", args.raw_path] if args.raw_path else []),
+                           *(["--download"] if getattr(args, "download", False) else []),
                            *(["--force"] if args.force else []))
     if name == "recipe":
         return _run_script("train_recipe.py", *common)
@@ -256,6 +257,8 @@ def main() -> int:
     p.add_argument("--dataset", choices=["ml1m", "beauty", "synthetic"], default="synthetic")
     p.add_argument("--run-id", default=None)
     p.add_argument("--raw-path", default=None)
+    p.add_argument("--download", action="store_true",
+                   help="download the raw dataset from its canonical source (verified checksums)")
     p.add_argument("--force", action="store_true")
     p.add_argument("--rec-only-checkpoints", default=None)
     p.add_argument("--allow-before-archive", action="store_true",

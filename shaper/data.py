@@ -235,6 +235,33 @@ class DatasetStats:
         return asdict(self)
 
 
+def _jsonable(obj: Any) -> Any:
+    """Convert a manifest into native JSON types (numpy scalars -> python
+    scalars; numpy-scalar dict keys -> strings)."""
+    import numpy as _np
+
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            if isinstance(k, (str, int, float, bool)) or k is None:
+                key = k
+            else:
+                key = str(k)
+            out[key] = _jsonable(v)
+        return out
+    if isinstance(obj, (list, tuple)):
+        return [_jsonable(v) for v in obj]
+    if isinstance(obj, _np.integer):
+        return int(obj)
+    if isinstance(obj, _np.floating):
+        return float(obj)
+    if isinstance(obj, _np.bool_):
+        return bool(obj)
+    if isinstance(obj, _np.ndarray):
+        return [_jsonable(v) for v in obj.tolist()]
+    return obj
+
+
 def compute_applicability_rates(train_seqs: Sequence[Sequence[int]]) -> Dict[str, float]:
     """Fraction of training histories where each view is applicable (changed)
     under the canonical protocol (pure data diagnostic)."""
@@ -324,6 +351,7 @@ def build_dataset_artifact(
     force: bool = False,
     logger: Optional[StructuredLogger] = None,
     run_id: str = "data-build",
+    raw_download_info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build and freeze the data artifact for one dataset.
 
@@ -354,23 +382,27 @@ def build_dataset_artifact(
     core_k = int(cfg.raw["dataset"]["core"])
     core_interactions, core_record = iterative_core(raw, core_k, logger=logger)
 
-    users_map: Dict[str, int] = {
-        u: i for i, u in enumerate(sorted(core_interactions["user"].unique()))
-    }
-    items_map: Dict[str, int] = {
-        it: i + 1 for i, it in enumerate(sorted(core_interactions["item"].unique()))
-    }  # 0 reserved for padding
+    # Raw-keyed maps feed `.map()` on the original column dtype; string-keyed
+    # maps are the persisted form (users.json / items.json must stay plain
+    # JSON, and numpy scalar dict keys are not hash-identical to python ints
+    # on every numpy version).
+    users_map_raw = {u: i for i, u in enumerate(sorted(core_interactions["user"].unique()))}
+    items_map_raw = {it: i + 1 for i, it in enumerate(sorted(core_interactions["item"].unique()))}
+    users_map: Dict[str, int] = {str(u): i for u, i in users_map_raw.items()}
+    items_map: Dict[str, int] = {str(it): i for it, i in items_map_raw.items()}  # 0 reserved for padding
     n_items = len(items_map)
 
-    core_interactions["user_id"] = core_interactions["user"].map(users_map)
-    core_interactions["item_id"] = core_interactions["item"].map(items_map)
+    core_interactions["user_id"] = core_interactions["user"].map(users_map_raw)
+    core_interactions["item_id"] = core_interactions["item"].map(items_map_raw)
 
     salt = make_salt(int(cfg.raw["dataset"]["seed"]), f"roles-{dataset}")
     robustness_salt = make_salt(int(cfg.raw["dataset"]["seed"]), f"robustness-{dataset}")
     targets, same_day_tie_rate = split_leave_one_out(core_interactions, robustness_salt)
 
     # Per-user training histories (all interactions except last two).
-    user_groups = {uid: grp for uid, grp in core_interactions.groupby("user_id")}
+    # Group keys are coerced to native ints (pandas/numpy scalar keys are
+    # not hash-identical to python ints on every numpy version).
+    user_groups = {int(uid): grp for uid, grp in core_interactions.groupby("user_id")}
     n_users = len(users_map)
     train_seqs: List[List[int]] = []
     train_lens: List[int] = []
@@ -520,6 +552,9 @@ def build_dataset_artifact(
         "stats": stats.to_dict(),
         "file_hashes": file_hashes,
         "raw_source": cfg.raw["dataset"]["source"],
+        "raw_download": raw_download_info or {
+            "note": "raw archive provided manually (no download sidecar recorded)"
+        },
         "ordering_primary": "timestamp_then_raw_row_id",
         "ordering_robustness": "salted_hash_of_(user,item,timestamp,raw_row_id)",
         "evaluation": {
@@ -534,7 +569,7 @@ def build_dataset_artifact(
         ),
     }
     with open(os.path.join(processed_root, "data_manifest.json"), "w", encoding="utf-8") as fh:
-        json.dump(manifest, fh, indent=2, sort_keys=True)
+        json.dump(_jsonable(manifest), fh, indent=2, sort_keys=True)
     if logger is not None:
         logger.info(
             "DATA_BUILD",

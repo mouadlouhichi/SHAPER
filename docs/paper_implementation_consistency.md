@@ -183,3 +183,15 @@ at the bottom.
     stage and notebook section; the notebook wraps every stage in a `stage()`
     helper that catches `SystemExit` and prints the message instead of a raw
     traceback (pinned by `tests/unit/test_run_all_gates.py`).
+14. **Raw-dataset downloader** (`shaper/data_download.py`, engineering
+    detail): `build_data.py --download` streams the canonical archives
+    (GroupLens `ml-1m.zip` with the published MD5 locked in
+    `configs/ml1m.yaml`; UCSD `Beauty_5.json.gz` with recorded SHA-256 and a
+    fallback URL), verifies checksums BEFORE the atomic rename, writes a
+    `*.download.json` provenance sidecar, and never overwrites an existing
+    archive without `--force`. The frozen data manifest records this as
+    `raw_download`. Archives stay under `data/raw/` (gitignored, never
+    committed) per the datasets' licensing terms. Numeric MovieLens IDs are
+    canonicalized to strings in the persisted user/item maps (numpy-scalar
+    dict keys are not plain JSON), which is why `_jsonable` sanitizes every
+    manifest before writing.

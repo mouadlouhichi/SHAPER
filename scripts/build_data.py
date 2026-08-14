@@ -1,14 +1,14 @@
 """DATA_BUILD + DATA_VALIDATE stages.
 
 Builds the frozen data artifact for one dataset:
-    python scripts/build_data.py --dataset ml1m    [--raw-path ...]
-    python scripts/build_data.py --dataset beauty  [--raw-path ...]
+    python scripts/build_data.py --dataset ml1m    [--download] [--raw-path ...]
+    python scripts/build_data.py --dataset beauty  [--download] [--raw-path ...]
     python scripts/build_data.py --dataset synthetic [--n-users 96 ...]
 
-Synthetic mode is the test/verification dataset (tiny; completes in seconds)
-and is also what the end-to-end suite uses. Real datasets require the raw
-files under data/raw (auto-downloaded for ml-1m when possible; Beauty must be
-provided per its license terms).
+Real datasets are downloaded from their canonical sources on request
+(--download; shaper/data_download.py streams, verifies checksums, and writes
+a sidecar manifest). Synthetic mode is the test/verification dataset (tiny;
+completes in seconds) and is also what the end-to-end suite uses.
 """
 
 from __future__ import annotations
@@ -27,10 +27,17 @@ from shaper.data import (  # noqa: E402
     build_synthetic_interactions,
     load_ml1m_raw,
 )
+from shaper.data_download import ensure_raw_dataset  # noqa: E402
 from shaper.logging_utils import StructuredLogger  # noqa: E402
 
 
+def _build_logger(cfg) -> StructuredLogger:
+    return StructuredLogger(cfg.paths["data_manifests"], run_id="data-build", name=f"build-{cfg.dataset}")
+
+
 def build(cfg, args) -> dict:
+    logger = _build_logger(cfg)
+    raw_download_info = None
     if args.dataset == "synthetic":
         raw = build_synthetic_interactions(
             n_users=args.n_users,
@@ -40,43 +47,55 @@ def build(cfg, args) -> dict:
             seed=args.synthetic_seed,
         )
     elif args.dataset == "ml1m":
-        raw_path = args.raw_path or os.path.join(cfg.paths["data_raw"], "ml-1m", "ratings.dat")
-        if not os.path.exists(raw_path):
+        if args.raw_path:
+            raw_path = args.raw_path
+            if raw_path.endswith(".zip"):
+                raw_path = _extract_ml1m_zip(cfg, raw_path)
+        else:
+            # canonical flow: ensure the verified archive, then parse ratings.dat
+            dl = ensure_raw_dataset("ml1m", cfg.paths["data_raw"], download=args.download,
+                                    force=args.force, logger=logger)
             zip_path = os.path.join(cfg.paths["data_raw"], "ml-1m.zip")
-            if os.path.exists(zip_path):
-                import zipfile
-
-                with zipfile.ZipFile(zip_path) as zf:
-                    zf.extract("ml-1m/ratings.dat", cfg.paths["data_raw"])
-                raw_path = os.path.join(cfg.paths["data_raw"], "ml-1m", "ratings.dat")
-            else:
-                raise SystemExit(
-                    "ml-1m.zip not found under data/raw. Download it from GroupLens "
-                    "(https://files.grouplens.org/datasets/movielens/ml-1m.zip) and retry."
-                )
+            raw_path = _extract_ml1m_zip(cfg, zip_path)
+            raw_download_info = dl
         raw = load_ml1m_raw(raw_path)
     elif args.dataset == "beauty":
-        raw_path = args.raw_path or os.path.join(cfg.paths["data_raw"], "Beauty_5.json.gz")
-        if not os.path.exists(raw_path):
-            raise SystemExit(
-                "Beauty_5.json.gz not found under data/raw. Obtain the Amazon Reviews 2018 "
-                "Beauty 5-core file (http://deepyeti.ucsd.edu/jianmo/amazon) and retry."
-            )
+        if args.raw_path:
+            raw_path = args.raw_path
+        else:
+            info = ensure_raw_dataset("beauty", cfg.paths["data_raw"], download=args.download,
+                                      force=args.force, logger=logger)
+            raw_path = info["path"]
+            raw_download_info = info
         from shaper.data import load_beauty_raw
 
         raw = load_beauty_raw(raw_path)
     else:  # pragma: no cover
         raise SystemExit(f"unknown dataset {args.dataset}")
 
-    logger = StructuredLogger(cfg.paths["data_manifests"], run_id="data-build", name=f"build-{cfg.dataset}")
     manifest = build_dataset_artifact(
         cfg,
         raw,
         processed_root=os.path.join(cfg.paths["data_processed"], cfg.dataset),
         force=args.force,
         logger=logger,
+        raw_download_info=raw_download_info,
     )
     return manifest
+
+
+def _extract_ml1m_zip(cfg, zip_path: str) -> str:
+    """Extract ratings.dat from the verified archive (idempotent)."""
+    out_dir = os.path.join(cfg.paths["data_raw"], "ml-1m")
+    ratings_path = os.path.join(out_dir, "ratings.dat")
+    if os.path.exists(ratings_path):
+        return ratings_path
+    os.makedirs(out_dir, exist_ok=True)
+    import zipfile
+
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extract("ml-1m/ratings.dat", cfg.paths["data_raw"])
+    return ratings_path
 
 
 def validate(cfg) -> dict:
@@ -98,7 +117,9 @@ def main() -> int:
 
     p = base_parser("build + validate the frozen data artifact")
     p.add_argument("--raw-path", default=None)
-    p.add_argument("--force", action="store_true", help="overwrite an existing frozen artifact")
+    p.add_argument("--force", action="store_true", help="overwrite an existing frozen artifact / re-download")
+    p.add_argument("--download", action="store_true",
+                   help="download the raw dataset from its canonical source (verified checksums)")
     p.add_argument("--skip-validate", action="store_true")
     p.add_argument("--n-users", type=int, default=96)
     p.add_argument("--n-items", type=int, default=40)

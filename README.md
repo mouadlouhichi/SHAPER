@@ -107,12 +107,23 @@ python scripts/run_all.py --resume --dataset synthetic --run-id my-run
 Confirmatory stages (`game-a`, `game-b`, `k4-mc`) refuse to run before the
 pilot-informed archive freeze (spec B.7). Real datasets:
 
-- **MovieLens-1M**: download `ml-1m.zip` from GroupLens into `data/raw/`
-  (rating ≥ 4 → positive; iterative 5-core; temporal LOO; max length 200;
-  full-catalog evaluation; the raw 1,000,209 rating count is never reported
-  as the processed count).
-- **Amazon-Beauty**: obtain the 2018 Beauty 5-core `Beauty_5.json.gz` into
-  `data/raw/` (every retained review positive; max length 50).
+- **MovieLens-1M**: `python scripts/build_data.py --dataset ml1m --download`
+  streams `ml-1m.zip` from GroupLens, verifies the published MD5
+  (`c4d9eecf…`, locked in `configs/ml1m.yaml`), records a provenance sidecar,
+  then converts rating ≥ 4 → positive, iterative 5-core, temporal LOO,
+  max length 200, full-catalog evaluation (the raw 1,000,209 rating count is
+  never reported as the processed count).
+- **Amazon-Beauty**: `python scripts/build_data.py --dataset beauty --download`
+  streams `Beauty_5.json.gz` from the canonical UCSD host (fallback URL
+  included), verifies archive integrity, and records the computed SHA-256 in
+  the sidecar (no published checksum exists); every retained review positive;
+  max length 50.
+- Archives live under `data/raw/` (gitignored — downloaded for local research
+  use and never committed, per the datasets' terms). The frozen artifact
+  manifest records the download URL, hashes, retrieval time and license note
+  as `raw_download`. Without `--download`, a missing archive produces an
+  actionable message with the same instructions (or place the file under
+  `data/raw/` manually). Notebook: `stage("data", download=True)`.
 
 Every run writes `results/runs/<run_id>/manifest.json` (stages, hashes),
 `spec_compliance.json`/`.md` (per-requirement PASS/FAIL/NOT_EXECUTED with
