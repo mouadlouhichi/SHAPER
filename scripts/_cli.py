@@ -28,7 +28,8 @@ def base_parser(description: str) -> argparse.ArgumentParser:
     p.add_argument("--dataset", choices=["ml1m", "beauty", "ml100k", "synthetic"], default="synthetic",
                    help="dataset to operate on (default synthetic for tests)")
     p.add_argument("--run-id", default=None, help="results/runs/<run_id> to use/create")
-    p.add_argument("--device", default=None, help="torch device (default: cuda if available else cpu)")
+    p.add_argument("--device", default=None,
+                   help="torch device (default: auto-detect cuda, then mps, then cpu)")
     return p
 
 
@@ -37,7 +38,11 @@ def resolve_device(args: argparse.Namespace) -> str:
         return args.device
     import torch
 
-    return "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 def resolve_recipe(cfg: Any, override: Optional[Dict[str, Any]] = None) -> Recipe:

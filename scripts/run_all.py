@@ -104,7 +104,8 @@ def _require_archive(cfg, args) -> None:
 def _run_stage_inner(name: str, cfg, args) -> int:
     ds = ["--dataset", cfg.dataset]
     run_id = ["--run-id", args.run_id] if args.run_id else []
-    common = ds + run_id
+    device = ["--device", args.device] if getattr(args, "device", None) else []
+    common = ds + run_id + device
     if name == "preflight":
         return _run_script("preflight.py", *ds, "--json-out",
                            os.path.join(cfg.paths["results"], f"preflight-{cfg.dataset}.json"))
@@ -279,6 +280,8 @@ def main() -> int:
     p.add_argument("--resume", action="store_true", help="resume the run at the next incomplete stage")
     p.add_argument("--dataset", choices=["ml1m", "beauty", "ml100k", "synthetic"], default="synthetic")
     p.add_argument("--run-id", default=None)
+    p.add_argument("--device", default=None,
+                   help="torch device: cuda | mps | cpu (default: auto-detect cuda, then mps, then cpu)")
     p.add_argument("--raw-path", default=None)
     p.add_argument("--download", action="store_true",
                    help="download the raw dataset from its canonical source (verified checksums)")
