@@ -104,6 +104,20 @@ python scripts/run_all.py --stage shapley --dataset synthetic --run-id my-run
 python scripts/run_all.py --resume --dataset synthetic --run-id my-run
 ```
 
+Additional pre-confirmatory artifacts:
+- **Preregistration archive** — `python scripts/run_all.py --stage preregister`
+  sha256-snapshots the spec documents, frozen configs, dependency lock and
+  repository commit with a UTC timestamp BEFORE the pilot seeds (spec B.7).
+- **Recommendation baselines** — `--stage baselines` trains GRU4Rec through
+  the frozen recipe and records CL4SRec as a protocol-compatible grand-
+  coalition reuse (DuoRec/CoSeRec flagged pending, per the literature freeze).
+- **Approximation audit** — `shaper.monte_carlo.exact_vs_mc_audit` samples
+  {2,4,8,16,32} permutations from the exact K=3 table (no training).
+- **Protect-last diagnostics** — frozen rec-only NLL/cosine sweeps for
+  protect-last-{0,1,2}; the main protocol stays protect-last-0.
+- **CI** — `.github/workflows/ci.yml` runs the full test suite plus a real
+  ml-100k staged-pipeline smoke on push/PR.
+
 Confirmatory stages (`game-a`, `game-b`, `k4-mc`) refuse to run before the
 pilot-informed archive freeze (spec B.7). Real datasets:
 

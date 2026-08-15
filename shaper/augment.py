@@ -36,16 +36,25 @@ def augment_crop(seq: Sequence[int], rng: random.Random, eta: Optional[float] = 
 
 
 def augment_mask(
-    seq: Sequence[int], rng: random.Random, mask_id: int, gamma: float = 0.2
+    seq: Sequence[int], rng: random.Random, mask_id: int, gamma: float = 0.2,
+    protect_last: int = 0,
 ) -> Tuple[List[int], bool]:
     """Replace gamma of valid positions by [MASK]. The main protocol does NOT
-    protect the last two positions."""
+    protect the last two positions (protect_last=0).
+
+    `protect_last>0` is used ONLY by the frozen rec-only diagnostics: masking
+    candidates are restricted to positions[:-protect_last], so the last
+    `protect_last` valid positions are never masked.
+    """
     seq = list(seq)
     n = len(seq)
     if n == 0:
         return seq, False
-    k = min(n, max(1, int(round(n * gamma))))
-    idx = rng.sample(range(n), k)
+    candidates = range(max(0, n - protect_last))
+    if not candidates:
+        return seq, False
+    k = min(len(candidates), max(1, int(round(n * gamma))))
+    idx = rng.sample(candidates, k)
     out = seq.copy()
     for i in idx:
         out[i] = mask_id
@@ -86,6 +95,7 @@ def apply_view(
     gamma: float = 0.2,
     beta: float = 0.2,
     eta: Optional[float] = None,
+    protect_last: int = 0,
 ) -> Tuple[List[int], bool]:
     """Apply one named view to one sequence."""
     if view == "crop":
@@ -161,8 +171,10 @@ def effective_mass(a_p: Sequence[float], coalition: Sequence[str], policy: str, 
     Game B: m_C^B = sum(a_p) / K
     """
     a = list(a_p)
+    if not coalition:
+        return 0.0  # empty coalition: zero mass under every policy
     if policy == "game_a":
-        return sum(a) / len(coalition) if coalition else 0.0
+        return sum(a) / len(coalition)
     if policy == "game_b":
         return sum(a) / K
     raise ValueError(f"unknown budget policy {policy}")

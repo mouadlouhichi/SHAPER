@@ -32,3 +32,4 @@ checkpoints/*
 
 # OS
 .DS_Store
+results/preregistration/

@@ -114,7 +114,12 @@ def evaluate_model(
     targets = inputs["target"].numpy()
     exclusions = inputs["exclusion"]
     res = EvaluationResult()
-    n_items = model.backbone.cfg.n_items
+    backbone = getattr(model, "backbone", None)
+    n_items = getattr(getattr(backbone, "cfg", None), "n_items", None)
+    if n_items is None:
+        n_items = getattr(getattr(model, "cfg", None), "n_items", None)
+    if n_items is None:
+        raise ValueError("cannot derive n_items from the model (backbone.cfg / cfg)")
     repeated = 0
     with torch.no_grad():
         for start in range(0, prefix.shape[0], batch_size):

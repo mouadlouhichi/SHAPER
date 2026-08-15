@@ -121,6 +121,9 @@ def _run_stage_inner(name: str, cfg, args) -> int:
         print("PILOT_VALIDATION: verify pilot rankings vary for substantive reasons "
               "and all protocol tests 1-20 pass; see tests/ and the pilot tables.")
         return 0
+    if name == "preregister":
+        # timestamped preregistration archive (spec B.7, before pilots)
+        return _run_script("archive_preregistration.py", *ds)
     if name == "amendment":
         out_path = os.path.join(cfg.paths["results"], f"amendment-{cfg.dataset}.json")
         with open(out_path, "w", encoding="utf-8") as fh:
@@ -209,6 +212,9 @@ def _run_stage_inner(name: str, cfg, args) -> int:
     if name == "game-a":
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "game-a")
+    if name == "baselines":
+        _require_archive(cfg, args)
+        return _run_script("train_coalitions.py", *common, "--stage", "baselines")
     if name == "game-b":
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "game-b")

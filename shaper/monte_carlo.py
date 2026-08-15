@@ -333,3 +333,68 @@ __all__ = [
     "AntitheticPermutationMCShapley",
     "grand_loo_from_seed",
 ]
+
+
+# --------------------------------------------------------------------------
+# Approximation audit: permutation MC against the EXACT K=3 table (spec A.8)
+# --------------------------------------------------------------------------
+
+def permutation_mc_estimate(
+    path: Sequence[str], values: Dict[Tuple[str, ...], float], players: Sequence[str]
+) -> Dict[str, float]:
+    """One sampled permutation's marginal-contribution estimate per player.
+
+    This is an AUDIT of the MC procedure against the exact answer (sampling
+    permutations from the already-computed complete table; no training). It
+    is NOT the registered K=4 estimator.
+    """
+    lookup = {tuple(sorted(k)): v for k, v in values.items()}
+    prev: Tuple[str, ...] = ()
+    out: Dict[str, float] = {}
+    for p in path:
+        curr = tuple(sorted(prev + (p,)))
+        out[p] = lookup[curr] - lookup[prev]
+        prev = curr
+    return out
+
+
+def exact_vs_mc_audit(
+    values: Dict[Tuple[str, ...], float],
+    players: Sequence[str],
+    n_samples: Sequence[int] = (2, 4, 8, 16, 32),
+    seed: int = 0,
+) -> Dict[str, Any]:
+    """Sample {2,4,8,16,32} random player permutations WITH replacement from
+    the exact K=3 value table and report the error of the permutation-MC
+    estimate against the exact Shapley vector (spec A.8 approximation audit;
+    descriptive, not a competing estimator)."""
+    from .shapley import exact_shapley
+
+    players = tuple(players)
+    exact = exact_shapley(values, players)
+    rng = random.Random(seed)
+    max_n = max(n_samples)
+    paths = [tuple(rng.sample(list(players), len(players))) for _ in range(max_n)]
+    out: Dict[str, Any] = {
+        "label": "permutation-MC approximation audit vs exact K=3 Shapley",
+        "exact": exact,
+        "players": list(players),
+        "per_sample_size": {},
+    }
+    for n in n_samples:
+        used = paths[:n]
+        est: Dict[str, List[float]] = {p: [] for p in players}
+        for path in used:
+            for p, v in permutation_mc_estimate(path, values, players).items():
+                est[p].append(v)
+        mean_est = {p: float(np.mean(est[p])) for p in players}
+        errors = {p: np.array(est[p]) - exact[p] for p in players}
+        mae = float(np.mean([np.abs(errors[p]).mean() for p in players]))
+        rmse = float(np.sqrt(np.mean([(errors[p] ** 2).mean() for p in players])))
+        out["per_sample_size"][n] = {
+            "estimate": mean_est,
+            "mae": mae,
+            "rmse": rmse,
+            "paths": [list(p) for p in used],
+        }
+    return out

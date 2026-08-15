@@ -108,12 +108,12 @@ def test_metrics(cfg, data, model, device) -> Dict[str, float]:
             "repeated_target_rate": res.repeated_target_rate}
 
 
-def load_model_from_checkpoint(cfg, data, path, device):
+def load_model_from_checkpoint(cfg, data, path, device, model_factory=None):
     from shaper.backbone import build_model
     from shaper.checkpoints import load_coalition_checkpoint
 
     payload = load_coalition_checkpoint(path)
-    model = build_model(cfg, data.n_items)
+    model = (model_factory or build_model)(cfg, data.n_items)
     model.load_state_dict(payload["model"])
     model.to(device)
     return model
@@ -352,8 +352,36 @@ def stage_final_test(cfg, data, run, args, recipe, device):
         if select_cal["decision"].get("action") == "remove_lowest":
             row7b["note"] = f"Select: removed {removed}"
 
+    # recommendation baselines (paper 4.2): GRU4Rec trained by the
+    # BASELINE_CONTROLS stage, CL4SRec = uniform grand-coalition row reuse.
+    rec_baselines = {}
+    gru_rows = []
+    from shaper.baseline_models import build_gru4rec
+
+    for seed in final_seeds:
+        path = os.path.join(run.checkpoint_root(), f"seed{seed}", "gru4rec_baseline",
+                            "empty", "final.pt")
+        if os.path.exists(path):
+            gru_rows.append(test_metrics(
+                cfg, data,
+                load_model_from_checkpoint(cfg, data, path, device, model_factory=build_gru4rec),
+                device,
+            ))
+    if gru_rows:
+        rec_baselines["gru4rec"] = {
+            **_mean_test(gru_rows),
+            "cost": f"{len(gru_rows)} final-seed trainings (frozen recipe)",
+            "note": "rec-only GRU baseline",
+        }
+    rec_baselines["cl4srec"] = {
+        **_mean_test(uniform),
+        "cost": "0 (grand-coalition reuse)",
+        "note": "protocol-compatible CL4SRec reference = uniform three-view contrastive SASRec",
+    }
+
     out = {
         "final_seeds": final_seeds,
+        "recommendation_baselines": rec_baselines,
         "test_users": "all eligible users",
         "prefix": "training history + validation item",
         "table7a_unconditional": rows,

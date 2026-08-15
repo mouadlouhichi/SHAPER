@@ -105,6 +105,7 @@ class TrainContext:
     checkpoint_interval: Optional[int] = None
     base_state: Optional[Dict[str, torch.Tensor]] = None
     base_state_path: Optional[str] = None
+    model_factory: Optional[Any] = None  # (cfg, n_items) -> nn.Module; default SASRec
 
     @property
     def data_hash(self) -> str:
@@ -524,7 +525,8 @@ def train_coalition(
                 "PRIMARY_GAME_A", "cache_hit", seed=ctx.seed, coalition=coalition,
                 policy=policy, dataset=ctx.cfg.dataset, checkpoint=cached["checkpoint_path"],
             )
-            model = build_model(ctx.cfg, ctx.data.n_items)
+            factory = ctx.model_factory or build_model
+            model = factory(ctx.cfg, ctx.data.n_items)
             model.load_state_dict(payload["model"])
             model.to(ctx.device)
             return _result_payload(
@@ -539,9 +541,17 @@ def train_coalition(
             coalition=coalition, policy=policy, reason=reason,
         )
 
-    model = build_model(ctx.cfg, ctx.data.n_items)
-    init_state = common_initialization(ctx)
-    model.load_state_dict({k: v.clone() for k, v in init_state.items()})
+    factory = ctx.model_factory or build_model
+    model = factory(ctx.cfg, ctx.data.n_items)
+    if ctx.model_factory is None:
+        # registered protocol: every coalition clones the common seed init
+        init_state = common_initialization(ctx)
+        model.load_state_dict({k: v.clone() for k, v in init_state.items()})
+    else:
+        # baseline models have their own seed-specific initialization
+        # (same RNG discipline: seeded by the seed, xavier embeddings/linear)
+        set_deterministic_rng(ctx.seed)
+        model.apply(_init_weights)
     model.to(ctx.device)
     optimizer = make_optimizer(model, ctx.cfg, ctx.recipe.learning_rate)
     scheduler = make_scheduler(optimizer, ctx.recipe.steps)

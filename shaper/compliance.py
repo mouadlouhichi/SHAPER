@@ -154,6 +154,18 @@ REQUIREMENTS: List[Dict[str, Any]] = [
     {"req": "Appendix J planning half-width formula + hierarchical bootstrap; pilot-informed MDE tables",
      "source": "spec A.12", "file": "shaper/power.py", "test": "tests/unit/test_power.py"},
 
+    # ---- baselines / audits / diagnostics / preregistration ---------------------
+    {"req": "recommendation baselines archived before confirmatory interpretation: GRU4Rec (rec-only, frozen recipe) + CL4SRec (grand-coalition reuse, protocol-compatible caveat); DuoRec/CoSeRec status explicit",
+     "source": "paper 4.2", "file": "shaper/baseline_models.py, scripts/train_coalitions.py::stage_baselines", "test": "tests/unit/test_baselines_audit_prereg.py"},
+    {"req": "approximation audit: sampled permutations {2,4,8,16,32} from the exact K=3 table vs exact Shapley (descriptive, not a competing estimator)",
+     "source": "spec A.8", "file": "shaper/monte_carlo.py::exact_vs_mc_audit", "test": "tests/unit/test_baselines_audit_prereg.py"},
+    {"req": "protect-last-1/2 sweeps remain frozen rec-only NLL/cosine diagnostics; main protocol does NOT protect the last two positions",
+     "source": "spec A.4 / A.15", "file": "shaper/augment.py::augment_mask, scripts/run_game.py::severity_calibration", "test": "tests/unit/test_baselines_audit_prereg.py"},
+    {"req": "timestamped preregistration archive (spec + config hashes, commit, archive hash) generated BEFORE the excluded pilot seeds",
+     "source": "spec B.7", "file": "scripts/archive_preregistration.py", "test": "tests/unit/test_baselines_audit_prereg.py"},
+    {"req": "CI exercises the full test suite and a real ml-100k staged-pipeline smoke run",
+     "source": "spec A.2 (CI exercises the exact lock)", "file": ".github/workflows/ci.yml", "test": "tests/unit/test_baselines_audit_prereg.py"},
+
     # ---- infrastructure ---------------------------------------------------------
     {"req": "atomic checkpoints (temp -> flush -> fsync -> rename); checkpoint_manifest.json; corrupted checkpoint rejected and previous valid restored",
      "source": "spec sections 49-51", "file": "shaper/checkpoints.py", "test": "tests/unit/test_checkpoints.py"},

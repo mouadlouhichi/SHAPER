@@ -44,6 +44,7 @@ from shaper.game import (  # noqa: E402
     subtract_baseline,
 )
 from shaper.monte_carlo import K4SeedResult, required_coalitions, sample_permutation  # noqa: E402
+from shaper.baseline_models import build_gru4rec, cl4srec_reference  # noqa: E402
 from shaper.training import Recipe, TrainContext, train_coalition  # noqa: E402
 
 
@@ -171,6 +172,66 @@ def stage_k4_mc(cfg, data, run, args, recipe, device, stage_name):
             "max_unique_models_per_seed": 10}
 
 
+def stage_baselines(cfg, data, run, args, recipe, device, stage_name):
+    """Recommendation baselines (paper 4.2), archived before confirmatory
+    interpretation: GRU4Rec (rec-only, frozen recipe, own per-seed init) and
+    CL4SRec (protocol-compatible reference = Game-A grand-coalition reuse).
+
+    GRU4Rec trains on the confirmatory seeds with the SAME fixed step budget,
+    keyed negatives and epoch permutations as the coalitions; its declared
+    validation budget is the frozen V_tune/V_game/V_select split. Test
+    evaluation happens only in FINAL_INTERVENTION_TEST, after every decision
+    is locked.
+    """
+    from shaper.game import CoalitionValueRecord, evaluate_and_record
+
+    seeds = args.seeds or cfg.seeds["confirmatory_game_a"]
+    out: Dict[str, Any] = {"gru4rec": {}, "cl4srec": cl4srec_reference(
+        os.path.join(run.root, "coalition_tables"), tuple(cfg.seeds["confirmatory_game_a"]))}
+    for seed in seeds:
+        manifest = CheckpointManifest(os.path.join(run.checkpoint_root(), "manifest-root"))
+        ctx = TrainContext(
+            cfg=cfg, data=data, recipe=recipe, seed=seed, policy="gru4rec_baseline",
+            run_dir=run.checkpoint_root(), logger=run.logger, manifest=manifest,
+            config_hash=cfg.config_hash(), device=device,
+            log_interval=max(1, min(50, recipe.steps // 5)),
+            checkpoint_interval=max(1, min(cfg.training["checkpoint_interval"], recipe.steps)),
+            model_factory=build_gru4rec,
+        )
+        result = train_coalition(ctx, [])  # rec-only baseline
+        run.tracker.cache_hits += int(result.cache_hit)
+        run.tracker.cache_misses += int(not result.cache_hit)
+        if not result.cache_hit:
+            run.tracker.n_coalition_models += 1
+            run.tracker.training_steps += result.steps
+        record = evaluate_and_record(
+            result.model, data, cfg.dataset, seed, "gru4rec_baseline", [],
+            cfg.evaluation["k"], roles=("tune", "game", "select"),
+        )
+        out["gru4rec"][seed] = {
+            "metrics": record.to_dict(),
+            "checkpoint": result.checkpoint_path,
+            "budget": {
+                "validation_budget": "frozen V_tune/V_game/V_select roles",
+                "training_steps": result.steps,
+                "final_seed_count": len(seeds),
+                "training_time_seconds": result.wall_seconds,
+            },
+        }
+        path = os.path.join(run.path("coalition_tables"), f"baselines_gru4rec_seed{seed}.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(out["gru4rec"][seed], fh, indent=2, sort_keys=True)
+    out["baseline_registry"] = {
+        "gru4rec": "implemented (rec-only, frozen recipe)",
+        "cl4srec": "implemented (grand-coalition reuse; protocol-compatible caveat recorded)",
+        "duorec": "pending (semantic augmentation machinery + literature freeze)",
+        "coserec": "pending (substitution-aware machinery + literature freeze)",
+        "archived_before_confirmatory_interpretation": True,
+    }
+    run.write_json("metrics", "recommendation_baselines.json", out)
+    return out
+
+
 def stage_pilot(cfg, data, run, args, recipe, device, stage_name):
     seeds = cfg.seeds["pilots"]
     policy = "game_a"
@@ -243,6 +304,7 @@ def stage_nondet_floor(cfg, data, run, args, recipe, device, stage_name):
 
 
 STAGES = {
+    "baselines": stage_baselines,
     "pilot": stage_pilot,
     "game-a": stage_game_a,
     "game-b": stage_game_b,
@@ -280,6 +342,7 @@ def main() -> int:
     run = RunDirectory(run_id, results_root=cfg.paths["results"]).create(cfg, resume=True)
     run.update_manifest(data_hash=data.data_hash, recipe_hash=recipe.hash())
     stage_name = {
+        "baselines": "BASELINE_CONTROLS",
         "pilot": "PILOT_1001_1002",
         "game-a": "PRIMARY_GAME_A",
         "game-b": "SECONDARY_GAME_B",

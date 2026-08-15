@@ -199,7 +199,8 @@ def run_interactions(cfg, data, run, args, device):
 # --------------------------------------------------------------------------
 
 def _corrupt_prefixes(prefix: torch.Tensor, view: str, mask_id: int, rng_seed: int,
-                      gamma: float = 0.2, beta: float = 0.2, eta: Optional[float] = None) -> torch.Tensor:
+                      gamma: float = 0.2, beta: float = 0.2, eta: Optional[float] = None,
+                      protect_last: int = 0) -> torch.Tensor:
     import random as _random
 
     from shaper.provenance import key_int
@@ -207,8 +208,9 @@ def _corrupt_prefixes(prefix: torch.Tensor, view: str, mask_id: int, rng_seed: i
     out = prefix.clone()
     for i in range(prefix.shape[0]):
         seq = [int(x) for x in prefix[i].tolist() if x != 0]
-        rng = _random.Random(key_int(rng_seed, i, view, gamma, beta, eta, salt="severity"))
-        aug, _ = apply_view(view, seq, rng, mask_id=mask_id, gamma=gamma, beta=beta, eta=eta)
+        rng = _random.Random(key_int(rng_seed, i, view, gamma, beta, eta, protect_last, salt="severity"))
+        aug, _ = apply_view(view, seq, rng, mask_id=mask_id, gamma=gamma, beta=beta, eta=eta,
+                            protect_last=protect_last)
         padded = [0] * (prefix.shape[1] - len(aug)) + aug
         out[i] = torch.tensor(padded)
     return out
@@ -325,6 +327,28 @@ def severity_calibration(cfg, data, run, checkpoint_paths, device):
             "residuals": {v: view_results[v]["residual"] for v in view_results},
             "note": "frozen rec-only checkpoints; no additional coalition Shapley sweep",
         }
+    # protect-last-1/2 sweeps: frozen rec-only diagnostics only (locked scope)
+    protect_diag: Dict[str, Any] = {}
+    for protect in (0, 1, 2):
+        vals_nll = []
+        vals_cos = []
+        for model in models:
+            corrupted = _corrupt_prefixes(
+                inputs["prefix"], "mask", mask_id, rng_seed=901,
+                gamma=canonical["mask"], beta=canonical["reorder"],
+                eta=canonical["crop"], protect_last=protect,
+            )
+            vals_nll.append(_frozen_nll(model, {"prefix": corrupted, "target": inputs["target"], "exclusion": inputs["exclusion"]}, device, cfg.evaluation["k"]) - base_mean)
+            vals_cos.append(base_mean - _frozen_cosine(model, inputs, corrupted, device))
+        protect_diag[f"protect_last_{protect}"] = {
+            "nll_increase_mean": float(np.mean(vals_nll)),
+            "cosine_displacement_mean": float(np.mean(vals_cos)),
+        }
+    out["protect_last_diagnostics"] = {
+        "sweep": protect_diag,
+        "canonical": "protect_last_0 (main protocol does NOT protect the last two positions)",
+        "scope": "frozen rec-only NLL/cosine only; no coalition retraining",
+    }
     run.write_json("metrics", "severity_diagnostics.json", out)
     return out
 

@@ -207,7 +207,35 @@ at the bottom.
     interaction declaration rule degenerate (CI collapses to the point
     estimate); results are pipeline-verification outputs, never reported as
     scientific findings.
-16. **Console log layer** (`shaper/logging_utils.py`): every structured
+16. **Recommendation baselines** (`shaper/baseline_models.py`): GRU4Rec is a
+    rec-only GRU recommender trained through the same frozen recipe/keyed
+    schedules as the coalitions (TrainContext gained a `model_factory` hook;
+    factory models get their own seed-specific init since they cannot load
+    the SASRec common init). CL4SRec is recorded as a protocol-compatible
+    reference that REUSES the Game-A grand coalition (uniform
+    crop/mask/reorder NT-Xent), with the re-implementation caveat stored in
+    the manifest. DuoRec/CoSeRec remain explicitly pending
+    (`BASELINE_REGISTRY`) pending the literature freeze — flagged in the
+    paper as remaining pre-confirmatory baseline work.
+17. **Exact-vs-MC audit** (`shaper/monte_carlo.py::exact_vs_mc_audit`):
+    samples {2,4,8,16,32} permutations WITH replacement from the complete
+    K=3 table (no training) and reports MAE/RMSE against exact Shapley —
+    descriptive only, never a competing estimator.
+18. **Protect-last diagnostics**: `augment_mask(protect_last=k)` restricts
+    mask candidates to positions[:-k]; the severity calibration emits a
+    frozen rec-only protect-last-{0,1,2} NLL/cosine sweep. The main
+    protocol stays `protect_last=0` (locked).
+19. **Preregistration archive** (`scripts/archive_preregistration.py` /
+    `run_all.py --stage preregister`): sha256-snapshots the spec documents,
+    frozen configs, dependency lock, config hash, repository commit and a
+    UTC timestamp before the pilot seeds; an external registry DOI is added
+    at publication time. `results/preregistration/` is gitignored evidence.
+20. **CI** (`.github/workflows/ci.yml`): runs the full test suite on
+    push/PR and a real ml-100k staged-pipeline smoke (data -> recipe ->
+    pilots -> archive -> Game A/B -> K=4 MC -> baselines -> allocations ->
+    RQ4 -> compliance audit) on public runners with the canonical GroupLens
+    download.
+21. **Console log layer** (`shaper/logging_utils.py`): every structured
     event is written to the run's `logs/events.jsonl` AND rendered as a
     human-readable `[HH:MM:SS] STAGE | event | key=value` line on stdout
     (silence with `console=False`); `scripts/run_all.py` wraps each stage in
