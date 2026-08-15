@@ -1,0 +1,120 @@
+{
+  "no_go": [
+    "identical_coalition_rankings",
+    "efficiency_failure",
+    "per_user_consistency_failure",
+    "split_leakage",
+    "excluded_view_leakage",
+    "projection_only_surrogate_as_primary",
+    "warm_start_from_grand_checkpoint",
+    "unequal_optimizer_budgets",
+    "test_affects_selection",
+    "invalid_half_pair_removal_formula"
+  ],
+  "scope": [
+    {
+      "allocation": "exact_shapley",
+      "coalitions": "all_2k",
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Exact canonical Game A (1/|C|) \u2014 primary estimand",
+      "extension": "extension_game_a",
+      "item": "exact_canonical_game_a",
+      "seeds": "confirmatory_game_a"
+    },
+    {
+      "allocation": "exact_shapley",
+      "coalitions": "intermediate_only",
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Exact Game B policy sensitivity (1/K) \u2014 secondary, descriptive",
+      "expansion": "never",
+      "item": "exact_game_b",
+      "seeds": "game_b"
+    },
+    {
+      "allocation": "none",
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Frozen rec-only V_tune NLL/cosine severity calibration; no coalition Shapley sweep",
+      "item": "nll_cosine_severity_diagnostics",
+      "seeds": "recipe_alpha"
+    },
+    {
+      "allocation": "none",
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Pilot seed 1002 ranking confirmation: three matched singletons + matched grand",
+      "item": "ranking_confirmation_aligned_severity",
+      "seeds": [
+        1002
+      ]
+    },
+    {
+      "allocation": "mc_approximate",
+      "coalitions": "antithetic_prefix_paths_plus_grand_loo",
+      "datasets": [
+        "beauty"
+      ],
+      "description": "Beauty K=4 Game A with dropout player \u2014 antithetic permutation MC",
+      "exact_interactions": false,
+      "item": "beauty_k4_game_a_mc",
+      "max_unique_models_per_seed": 10,
+      "seeds": "k4_beauty_mc"
+    },
+    {
+      "allocation": "none",
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "eta/gamma/beta and protect-last-1/2 sweeps: frozen rec-only NLL/cosine only",
+      "item": "eta_gamma_beta_protect_diagnostics"
+    },
+    {
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Bounded singleton lambda_cl stress test {0.05,0.1,0.2}, V_tune, seed 901",
+      "item": "singleton_lambda_stress",
+      "seeds": [
+        901
+      ]
+    },
+    {
+      "datasets": [
+        "beauty"
+      ],
+      "description": "Optional cached ranking-adapter surrogate appendix (ranking path + rec loss)",
+      "item": "cached_ranking_adapter",
+      "optional": true,
+      "seeds": [
+        4001
+      ]
+    },
+    {
+      "datasets": [
+        "ml1m",
+        "beauty"
+      ],
+      "description": "Sampled-permutation MC audit against exact K=3 tables; no training",
+      "item": "exact_vs_mc_audit",
+      "samples": [
+        2,
+        4,
+        8,
+        16,
+        32
+      ]
+    }
+  ]
+}

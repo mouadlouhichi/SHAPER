@@ -1,0 +1,10 @@
+data_hashes:
+  ml100k: f4262c74130a2e056ad922f572ba2975
+frozen_at: '2026-08-15T01:49:01Z'
+selected_recipe:
+  ml100k:
+    lambda_cl: 0.1
+    learning_rate: 0.001
+    steps: 16
+    tau: 0.1
+status: frozen

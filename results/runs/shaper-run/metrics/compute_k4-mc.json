@@ -1,0 +1,14 @@
+{
+  "cache_hit_rate": 0.0,
+  "cache_hits": 0,
+  "cache_misses": 10,
+  "evaluation_seconds": 0.0,
+  "gpu_time_seconds": 0.0,
+  "measured_note": "measured values; planning estimates are never reported as results",
+  "n_coalition_models_trained": 10,
+  "peak_memory_allocated_bytes": null,
+  "peak_memory_reserved_bytes": null,
+  "shapley_seconds": 0.0,
+  "total_training_steps": 160,
+  "wall_seconds_by_stage": {}
+}

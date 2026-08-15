@@ -1,0 +1,132 @@
+{
+  "coalition_spread": [
+    {
+      "max": 3.01506370306015e-05,
+      "min": -0.002449694089591503,
+      "range": 0.0024798447266221046,
+      "sd": 0.0009090977349984604
+    }
+  ],
+  "contextual_marginals_per_seed": [
+    {
+      "crop|empty": -0.0001574680209159851,
+      "crop|mask": 0.00174686498939991,
+      "crop|mask+reorder": 0.0013422174379229546,
+      "crop|reorder": 0.0011620130389928818,
+      "mask|crop": 0.0001876186579465866,
+      "mask|crop+reorder": 0.00026109255850315094,
+      "mask|empty": -0.0017167143523693085,
+      "mask|reorder": 8.088815957307816e-05,
+      "reorder|crop": -0.0011302130296826363,
+      "reorder|crop+mask": -0.001056739129126072,
+      "reorder|empty": -0.002449694089591503,
+      "reorder|mask": -0.0006520915776491165
+    }
+  ],
+  "efficiency_residuals": [
+    0.0
+  ],
+  "label": "exact Shapley (complete K=3 table)",
+  "loo_per_seed": [
+    {
+      "crop": 0.0013422174379229546,
+      "mask": 0.00026109255850315094,
+      "reorder": -0.001056739129126072
+    }
+  ],
+  "max_efficiency_residual": 0.0,
+  "max_per_user_consistency_gap": {
+    "crop": 7.1191112521133e-10,
+    "mask": 3.813031641732717e-10,
+    "reorder": 3.8242334190856375e-10
+  },
+  "mean_phi": {
+    "crop": 0.0008797294770677884,
+    "mask": -0.0004404561283687751,
+    "reorder": -0.0014658618407944837
+  },
+  "monotonicity_violations_per_seed": [
+    [
+      {
+        "coalition": [
+          "crop"
+        ],
+        "context": [],
+        "marginal": -0.0001574680209159851,
+        "player": "crop"
+      },
+      {
+        "coalition": [
+          "mask"
+        ],
+        "context": [],
+        "marginal": -0.0017167143523693085,
+        "player": "mask"
+      },
+      {
+        "coalition": [
+          "reorder"
+        ],
+        "context": [],
+        "marginal": -0.002449694089591503,
+        "player": "reorder"
+      },
+      {
+        "coalition": [
+          "crop",
+          "reorder"
+        ],
+        "context": [
+          "crop"
+        ],
+        "marginal": -0.0011302130296826363,
+        "player": "reorder"
+      },
+      {
+        "coalition": [
+          "mask",
+          "reorder"
+        ],
+        "context": [
+          "mask"
+        ],
+        "marginal": -0.0006520915776491165,
+        "player": "reorder"
+      },
+      {
+        "coalition": [
+          "crop",
+          "mask",
+          "reorder"
+        ],
+        "context": [
+          "crop",
+          "mask"
+        ],
+        "marginal": -0.001056739129126072,
+        "player": "reorder"
+      }
+    ]
+  ],
+  "note": "Game B never replaces Game A, is never pooled with it, and never drives RQ4 or seed expansion",
+  "per_seed_phi": [
+    {
+      "crop": 0.0008797294770677884,
+      "mask": -0.0004404561283687751,
+      "reorder": -0.0014658618407944837
+    }
+  ],
+  "per_user_consistency": {
+    "crop": 0.0008797287651566632,
+    "mask": -0.0004404565096719393,
+    "reorder": -0.0014658614583711418
+  },
+  "seeds": [
+    2001
+  ],
+  "shapley_of_mean_table": {
+    "crop": 0.0008797294770677884,
+    "mask": -0.0004404561283687751,
+    "reorder": -0.0014658618407944837
+  }
+}

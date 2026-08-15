@@ -1,0 +1,24 @@
+{
+  "2001": {
+    "contextual_marginals": {
+      "crop|empty": -0.0001574680209159851,
+      "crop|mask": 0.00174686498939991,
+      "crop|mask+reorder": 0.0013422174379229546,
+      "crop|reorder": 0.0011620130389928818,
+      "mask|crop": 0.0001876186579465866,
+      "mask|crop+reorder": 0.00026109255850315094,
+      "mask|empty": -0.0017167143523693085,
+      "mask|reorder": 8.088815957307816e-05,
+      "reorder|crop": -0.0011302130296826363,
+      "reorder|crop+mask": -0.001056739129126072,
+      "reorder|empty": -0.002449694089591503,
+      "reorder|mask": -0.0006520915776491165
+    },
+    "grand_loo": {
+      "crop": 0.0013422174379229546,
+      "mask": 0.00026109255850315094,
+      "reorder": -0.001056739129126072
+    },
+    "note": "LOO is a grand-coalition-context baseline; never equated with Shapley"
+  }
+}

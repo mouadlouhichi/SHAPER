@@ -1,0 +1,246 @@
+{
+  "budget": {
+    "calibration_cost": {},
+    "final_seed_count": null,
+    "training_runs": [],
+    "training_time_seconds": 0.0,
+    "validation_budget": {
+      "note": "fixed users, never test",
+      "role": "V_select"
+    }
+  },
+  "direct_search": {
+    "budget": {
+      "calibration_cost": {},
+      "final_seed_count": null,
+      "training_runs": [],
+      "training_time_seconds": 0.0,
+      "validation_budget": {
+        "note": "fixed users, never test",
+        "role": "V_select"
+      }
+    },
+    "design": [
+      {
+        "crop": 0.3333333333333333,
+        "mask": 0.3333333333333333,
+        "reorder": 0.3333333333333333
+      },
+      {
+        "crop": 0.16666666666666666,
+        "mask": 0.3333333333333333,
+        "reorder": 0.5
+      },
+      {
+        "crop": 0.16666666666666666,
+        "mask": 0.5,
+        "reorder": 0.3333333333333333
+      },
+      {
+        "crop": 0.3333333333333333,
+        "mask": 0.16666666666666666,
+        "reorder": 0.5
+      },
+      {
+        "crop": 0.3333333333333333,
+        "mask": 0.5,
+        "reorder": 0.16666666666666666
+      },
+      {
+        "crop": 0.5,
+        "mask": 0.16666666666666666,
+        "reorder": 0.3333333333333333
+      },
+      {
+        "crop": 0.5,
+        "mask": 0.3333333333333333,
+        "reorder": 0.16666666666666666
+      },
+      {
+        "crop": 0.0,
+        "mask": 0.5,
+        "reorder": 0.5
+      },
+      {
+        "crop": 0.16666666666666666,
+        "mask": 0.16666666666666666,
+        "reorder": 0.6666666666666666
+      },
+      {
+        "crop": 0.16666666666666666,
+        "mask": 0.6666666666666666,
+        "reorder": 0.16666666666666666
+      },
+      {
+        "crop": 0.5,
+        "mask": 0.0,
+        "reorder": 0.5
+      },
+      {
+        "crop": 0.5,
+        "mask": 0.5,
+        "reorder": 0.0
+      },
+      {
+        "crop": 0.6666666666666666,
+        "mask": 0.16666666666666666,
+        "reorder": 0.16666666666666666
+      },
+      {
+        "crop": 0.0,
+        "mask": 0.3333333333333333,
+        "reorder": 0.6666666666666666
+      },
+      {
+        "crop": 0.0,
+        "mask": 0.6666666666666666,
+        "reorder": 0.3333333333333333
+      }
+    ],
+    "label": "15-point, one-initialization search plus five-seed confirmation",
+    "scores": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0015375788789242506,
+      "4": 0.0016012234846130013,
+      "5": 0.0,
+      "6": 0.0,
+      "7": 0.0015375788789242506,
+      "8": 0.0,
+      "9": 0.001678004744462669,
+      "10": 0.0017730497056618333,
+      "11": 0.0,
+      "12": 0.0,
+      "13": 0.0,
+      "14": 0.001678004744462669
+    },
+    "selected_index": 10,
+    "selected_weights": {
+      "crop": 0.5,
+      "mask": 0.0,
+      "reorder": 0.5
+    }
+  },
+  "dirichlet_reference": {
+    "candidates": [
+      {
+        "crop": 0.3765145153451877,
+        "mask": 0.2445959040618554,
+        "reorder": 0.37888958059295674
+      },
+      {
+        "crop": 0.15110140620374266,
+        "mask": 0.25393147540281813,
+        "reorder": 0.5949671183934392
+      },
+      {
+        "crop": 0.5097234132017635,
+        "mask": 0.3017484246861598,
+        "reorder": 0.1885281621120765
+      },
+      {
+        "crop": 0.6398435523477712,
+        "mask": 0.27427296609297963,
+        "reorder": 0.0858834815592491
+      },
+      {
+        "crop": 0.2038686761011952,
+        "mask": 0.06840788559578058,
+        "reorder": 0.7277234383030243
+      },
+      {
+        "crop": 0.4659663778166695,
+        "mask": 0.2752390464850466,
+        "reorder": 0.25879457569828396
+      },
+      {
+        "crop": 0.6928094395943151,
+        "mask": 0.28659655956185104,
+        "reorder": 0.020594000843833823
+      },
+      {
+        "crop": 0.10627297004949712,
+        "mask": 0.8533347195841009,
+        "reorder": 0.04039231036640203
+      },
+      {
+        "crop": 0.044092646796514284,
+        "mask": 0.23367275791497844,
+        "reorder": 0.7222345952885072
+      },
+      {
+        "crop": 0.5834001098816434,
+        "mask": 0.15715548345644947,
+        "reorder": 0.25944440666190727
+      }
+    ],
+    "max": 0.003356009488925338,
+    "median": 0.0,
+    "min": 0.0,
+    "note": "V_select reference distribution, not ten test-tuned methods",
+    "scores": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0018947190837934613,
+      0.0,
+      0.0,
+      0.003356009488925338,
+      0.0,
+      0.0
+    ]
+  },
+  "drop_lowest_loo": {
+    "note": "reuses the already enumerated coalition model",
+    "removed_view": "reorder",
+    "selected_coalition": [
+      "crop",
+      "mask"
+    ]
+  },
+  "gates": {
+    "entropy_scores": {
+      "0.0": 0.0,
+      "0.1": 0.0
+    },
+    "locked_entropy_coefficient": 0.0,
+    "note": "training-only gates; never used at inference"
+  },
+  "loo_weights": {
+    "alpha_scores": {
+      "0.0": 0.0,
+      "0.5": 0.0,
+      "1.0": 0.0032792282290756702
+    },
+    "locked": {
+      "alpha": 1.0,
+      "best_metric": 0.0032792282290756702,
+      "scores": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "1.0": 0.0032792282290756702
+      },
+      "tie_break": "smaller alpha (closer to uniform) on ties"
+    },
+    "loo": {
+      "crop": 0.0013422174379229546,
+      "mask": 0.00026109255850315094,
+      "reorder": -0.001056739129126072
+    },
+    "weights": {
+      "crop": 0.8371540381553504,
+      "mask": 0.16284596184464964,
+      "reorder": 0.0
+    }
+  },
+  "random_removal": {
+    "note": "keyed random control; reuses the enumerated coalition model",
+    "removed_view": "crop",
+    "selected_coalition": [
+      "mask",
+      "reorder"
+    ]
+  }
+}

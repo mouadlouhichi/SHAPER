@@ -1,0 +1,301 @@
+[
+  {
+    "coalition": [
+      "crop"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.03202847018837929,
+        "mrr": 0.01796378195285797,
+        "n_users": 562,
+        "ndcg": 0.015461212024092674,
+        "nll": 6.795051097869873,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.03723404183983803,
+        "mrr": 0.015513894148170948,
+        "n_users": 188,
+        "ndcg": 0.014775809831917286,
+        "nll": 6.795302391052246,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.03723404183983803,
+        "mrr": 0.015453285537660122,
+        "n_users": 188,
+        "ndcg": 0.015490839257836342,
+        "nll": 6.814188003540039,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": 0.002750260755419731,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "mask"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.03202847018837929,
+        "mrr": 0.017273319885134697,
+        "n_users": 562,
+        "ndcg": 0.01531048770993948,
+        "nll": 6.829739093780518,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.010638297535479069,
+        "mrr": 0.011355354450643063,
+        "n_users": 188,
+        "ndcg": 0.0054137371480464935,
+        "nll": 6.828019142150879,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.03723404183983803,
+        "mrr": 0.018418332561850548,
+        "n_users": 188,
+        "ndcg": 0.018277067691087723,
+        "nll": 6.831503868103027,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": 0.0025995364412665367,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "reorder"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.024911031126976013,
+        "mrr": 0.01728597655892372,
+        "n_users": 562,
+        "ndcg": 0.014033009298145771,
+        "nll": 6.844650745391846,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.026595745235681534,
+        "mrr": 0.015362742356956005,
+        "n_users": 188,
+        "ndcg": 0.012703894637525082,
+        "nll": 6.844503402709961,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.010638297535479069,
+        "mrr": 0.012673508375883102,
+        "n_users": 188,
+        "ndcg": 0.006856727879494429,
+        "nll": 6.852957248687744,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": 0.001322058029472828,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "crop",
+      "mask"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.030249109491705894,
+        "mrr": 0.01720488630235195,
+        "n_users": 562,
+        "ndcg": 0.015096689574420452,
+        "nll": 6.8251447677612305,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.026595745235681534,
+        "mrr": 0.01243200059980154,
+        "n_users": 188,
+        "ndcg": 0.010863791219890118,
+        "nll": 6.829596519470215,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.03191489353775978,
+        "mrr": 0.012917062267661095,
+        "n_users": 188,
+        "ndcg": 0.012297090142965317,
+        "nll": 6.8381667137146,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": 0.002385738305747509,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "crop",
+      "reorder"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.02313167229294777,
+        "mrr": 0.014873538166284561,
+        "n_users": 562,
+        "ndcg": 0.011615223251283169,
+        "nll": 6.838576793670654,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.026595745235681534,
+        "mrr": 0.013755532912909985,
+        "n_users": 188,
+        "ndcg": 0.011508863419294357,
+        "nll": 6.837434768676758,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.01595744676887989,
+        "mrr": 0.012967047281563282,
+        "n_users": 188,
+        "ndcg": 0.008986917324364185,
+        "nll": 6.854226112365723,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": -0.0010957280173897743,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "mask",
+      "reorder"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.02313167229294777,
+        "mrr": 0.01296165306121111,
+        "n_users": 562,
+        "ndcg": 0.010462184436619282,
+        "nll": 6.853185176849365,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.01595744676887989,
+        "mrr": 0.01397609431296587,
+        "n_users": 188,
+        "ndcg": 0.0091085871681571,
+        "nll": 6.8509416580200195,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.021276595070958138,
+        "mrr": 0.013349968008697033,
+        "n_users": 188,
+        "ndcg": 0.010827930644154549,
+        "nll": 6.860502243041992,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": -0.0022487668320536613,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.024911031126976013,
+        "mrr": 0.018402550369501114,
+        "n_users": 562,
+        "ndcg": 0.012710951268672943,
+        "nll": 6.77947998046875,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.042553190141916275,
+        "mrr": 0.016271283850073814,
+        "n_users": 188,
+        "ndcg": 0.015004665590822697,
+        "nll": 6.771928310394287,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.05319149047136307,
+        "mrr": 0.01776738651096821,
+        "n_users": 188,
+        "ndcg": 0.01979348063468933,
+        "nll": 6.798384189605713,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": 0.0,
+    "value_nll": 0.0
+  },
+  {
+    "coalition": [
+      "crop",
+      "mask",
+      "reorder"
+    ],
+    "dataset": "ml100k",
+    "metrics_by_role": {
+      "game": {
+        "hr": 0.017793593928217888,
+        "mrr": 0.01618446223437786,
+        "n_users": 562,
+        "ndcg": 0.011684362776577473,
+        "nll": 6.851691246032715,
+        "repeated_target_rate": 0.0
+      },
+      "select": {
+        "hr": 0.021276595070958138,
+        "mrr": 0.010589014738798141,
+        "n_users": 188,
+        "ndcg": 0.00826103612780571,
+        "nll": 6.852065086364746,
+        "repeated_target_rate": 0.0
+      },
+      "tune": {
+        "hr": 0.01595744676887989,
+        "mrr": 0.012820139527320862,
+        "n_users": 188,
+        "ndcg": 0.008534732274711132,
+        "nll": 6.861331939697266,
+        "repeated_target_rate": 0.0
+      }
+    },
+    "policy": "game_b",
+    "repeated_target_rate_game": 0.0,
+    "seed": 2001,
+    "value_ndcg": -0.0010265884920954704,
+    "value_nll": 0.0
+  }
+]

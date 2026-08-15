@@ -1,0 +1,126 @@
+{
+  "config_hash": "71a3d06011d8dcc791d6f8808d93c958",
+  "created_at": "2026-08-15T01:47:43Z",
+  "data_hash": "f4262c74130a2e056ad922f572ba2975",
+  "dataset": "ml100k",
+  "recipe_hash": "73d1be412abea2eceb1405250729b28a",
+  "run_id": "shaper-run",
+  "stages": {
+    "ARCHIVE_FREEZE": {
+      "at": "2026-08-15T01:49:01Z",
+      "freeze_file": "/Users/mlouhichi/Desktop/Shapper/results/runs/freeze-synthetic-ml100k.yaml",
+      "status": "completed"
+    },
+    "BASELINE_CONTROLS": {
+      "at": "2026-08-15T01:52:59Z",
+      "status": "completed",
+      "wall_seconds": 104.64
+    },
+    "FINAL_INTERVENTION_TEST": {
+      "at": "2026-08-15T01:53:17Z",
+      "status": "completed",
+      "wall_seconds": 16.63
+    },
+    "INTERACTIONS": {
+      "at": "2026-08-15T01:50:33Z",
+      "status": "completed",
+      "wall_seconds": 0.0
+    },
+    "K4_BEAUTY_MC": {
+      "at": "2026-08-15T01:50:28Z",
+      "label": "Monte-Carlo approximate",
+      "max_unique_models_per_seed": 10,
+      "policy": "game_a",
+      "seeds": [
+        3001
+      ],
+      "status": "completed",
+      "tables": {
+        "3001": "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/coalition_tables/k4_seed3001.json"
+      },
+      "wall_seconds": 36.94
+    },
+    "LOO": {
+      "at": "2026-08-15T01:50:31Z",
+      "status": "completed",
+      "wall_seconds": 0.0
+    },
+    "PILOT_1001_1002": {
+      "at": "2026-08-15T01:49:01Z",
+      "note": "pilot outcomes excluded from confirmatory estimates",
+      "policy": "game_a",
+      "seeds": [
+        1001,
+        1002
+      ],
+      "status": "completed",
+      "tables": {
+        "1001": "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/coalition_tables/pilot_seed1001.json",
+        "1002": "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/coalition_tables/pilot_seed1002.json"
+      },
+      "wall_seconds": 52.26
+    },
+    "PRIMARY_GAME_A": {
+      "at": "2026-08-15T01:49:29Z",
+      "policy": "game_a",
+      "seeds": [
+        2001
+      ],
+      "status": "completed",
+      "tables": {
+        "2001": "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/coalition_tables/game_a_seed2001.json"
+      },
+      "wall_seconds": 26.49
+    },
+    "RECIPE_CALIBRATION": {
+      "at": "2026-08-15T01:48:07Z",
+      "recipe": {
+        "lambda_cl": 0.1,
+        "learning_rate": 0.001,
+        "steps": 16,
+        "tau": 0.1
+      },
+      "status": "completed"
+    },
+    "SECONDARY_GAME_B": {
+      "at": "2026-08-15T01:49:50Z",
+      "note": "empty/grand reused from Game A; 6 intermediate coalitions only",
+      "policy": "game_b",
+      "seeds": [
+        2001
+      ],
+      "status": "completed",
+      "tables": {
+        "2001": "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/coalition_tables/game_b_seed2001.json"
+      },
+      "wall_seconds": 20.23
+    },
+    "SEGMENTS": {
+      "at": "2026-08-15T01:50:35Z",
+      "figures": [
+        "/Users/mlouhichi/Desktop/Shapper/results/runs/shaper-run/figures/fig5_segments.png"
+      ],
+      "status": "completed",
+      "tables": [
+        "table6_segments.md"
+      ],
+      "wall_seconds": 1.46
+    },
+    "SELECT_CALIBRATION": {
+      "at": "2026-08-15T01:51:13Z",
+      "status": "completed",
+      "wall_seconds": 0.0
+    },
+    "SHAPLEY": {
+      "at": "2026-08-15T01:50:30Z",
+      "status": "completed",
+      "wall_seconds": 0.0
+    },
+    "WEIGHT_CALIBRATION": {
+      "at": "2026-08-15T01:51:11Z",
+      "status": "completed",
+      "wall_seconds": 35.23
+    }
+  },
+  "status": "created"
+}

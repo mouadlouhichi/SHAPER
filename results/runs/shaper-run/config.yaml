@@ -1,0 +1,67 @@
+augmentation:
+  crop:
+    eta_high: 1.0
+    eta_low: 0.5
+    force_nonidentity: true
+    min_keep: 2
+  dropout:
+    extra_forwards: 2
+    p: 0.2
+  mask:
+    gamma: 0.2
+    protect_last: false
+  min_contrastive_pairs: 8
+  reorder:
+    beta: 0.2
+    max_attempts: 10
+    min_span: 2
+dataset:
+  batch_size: 128
+  core: 5
+  core_order: row_order
+  expected_raw_zip_sha1: cd4dcac4241c8a4ad7badc7ca635da8a69dddb83
+  implicit_rating_threshold: 4
+  k4_mc_allowed: true
+  max_len: 50
+  name: ml100k
+  seed: 20260813
+  source: "GroupLens ml-100k.zip (u.data) \u2014 VERIFICATION/TEST only"
+  verification_only: true
+evaluation:
+  k: 10
+  prefix_filter: true
+  retain_repeated_target: true
+  secondary_ks:
+  - 5
+  - 10
+  tie_break: item_id_ascending
+model:
+  blocks: 2
+  d: 32
+  dropout: 0.2
+  embed_vocab_offset: 2
+  ff: 64
+  heads: 2
+  projection:
+  - 32
+  - 32
+  - 32
+roles:
+  game: 0.6
+  select: 0.2
+  tune: 0.2
+training:
+  betas:
+  - 0.9
+  - 0.98
+  checkpoint_interval: 8
+  cosine_final_frac: 0.1
+  eps: 1.0e-08
+  grad_clip: 1.0
+  lambda_cl: null
+  lr: null
+  optimizer: adamw
+  steps: null
+  tau: null
+  warmup_frac: 0.1
+  weight_decay: 0.0001

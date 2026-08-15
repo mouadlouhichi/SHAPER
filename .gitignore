@@ -25,11 +25,10 @@ data/manifests/*
 # Run outputs (checkpoints, logs, tables, figures). The directory layout is
 # documented in shaper/artifacts.py; runs are reproducible artifacts, not
 # source.
-results/runs/*
 !results/runs/.gitkeep
 checkpoints/*
 !checkpoints/.gitkeep
-
+*.pt
 # OS
 .DS_Store
 results/preregistration/

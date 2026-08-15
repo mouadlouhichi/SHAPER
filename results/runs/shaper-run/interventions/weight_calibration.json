@@ -1,0 +1,73 @@
+{
+  "activation": {
+    "activated": false,
+    "checks": {
+      "all_positive_views_80pct_stable": {
+        "detail": "unstable views: []",
+        "pass": true
+      },
+      "grand_uplift_ci_above_zero": {
+        "detail": "CI95 = (-0.001027, -0.001027)",
+        "pass": false
+      },
+      "highest_weight_sign_stability": {
+        "detail": "crop positive in 1/1 seeds (need >= 4)",
+        "pass": false
+      }
+    },
+    "deployment_fallback": "rec-only",
+    "note": "activation never happens because results look promising",
+    "status": "NOT_ACTIVATED"
+  },
+  "alpha_scores_vselect": {
+    "0.0": 0.009603514956931273,
+    "0.5": 0.010263940008978048,
+    "1.0": 0.011913826533903679
+  },
+  "grand_uplift_ci": [
+    -0.0010265884920954704,
+    -0.0010265884920954704
+  ],
+  "locked_alpha": {
+    "alpha": 1.0,
+    "best_metric": 0.011913826533903679,
+    "scores": {
+      "0.0": 0.009603514956931273,
+      "0.5": 0.010263940008978048,
+      "1.0": 0.011913826533903679
+    },
+    "tie_break": "smaller alpha (closer to uniform) on ties"
+  },
+  "per_init_scores": {
+    "0.0": [
+      0.0,
+      0.013487504795193672,
+      0.015323040075600147
+    ],
+    "0.5": [
+      0.0,
+      0.018164215609431267,
+      0.01262760441750288
+    ],
+    "1.0": [
+      0.006243279669433832,
+      0.016485461965203285,
+      0.013012737967073917
+    ]
+  },
+  "phi_mean": {
+    "crop": 0.0008797294770677884,
+    "mask": -0.0004404561283687751,
+    "reorder": -0.0014658618407944837
+  },
+  "target_q": {
+    "crop": 1.0,
+    "mask": 0.0,
+    "reorder": 0.0
+  },
+  "weights": {
+    "crop": 1.0,
+    "mask": 0.0,
+    "reorder": 0.0
+  }
+}
