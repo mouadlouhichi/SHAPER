@@ -119,6 +119,9 @@ def environment_record(
         env["cuda_available"] = torch.cuda.is_available()
         env["cuda_version"] = torch.version.cuda
         env["gpu_name"] = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+        env["mps_available"] = bool(
+            getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()
+        )
         env["torch_version"] = torch.__version__
         env["torch_threads"] = torch.get_num_threads()
     except Exception as exc:  # pragma: no cover
