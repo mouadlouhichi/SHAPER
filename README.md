@@ -104,6 +104,19 @@ python scripts/run_all.py --stage shapley --dataset synthetic --run-id my-run
 python scripts/run_all.py --resume --dataset synthetic --run-id my-run
 ```
 
+**Measured timing probe** (before the full study, on any new machine):
+
+    python scripts/run_all.py --stage data --dataset ml1m
+    python scripts/timing_probe.py --dataset ml1m --steps 200     # empty + grand coalitions
+    python scripts/timing_probe.py --dataset beauty --steps 200
+    python scripts/timing_probe.py --dataset ml1m --combine       # both datasets
+
+Reports seconds/step, extrapolated hours per 10,000-step coalition, and the
+projected total for the declared scope (cost-estimator model counts x the
+measured rate), saved under `results/timing/`. The paper reports measured
+values; planning ranges (spec A.13: ~50–90 single-GPU-hours on an 8-GB
+NVIDIA GPU) are never presented as results.
+
 Additional pre-confirmatory artifacts:
 - **Preregistration archive** — `python scripts/run_all.py --stage preregister`
   sha256-snapshots the spec documents, frozen configs, dependency lock and
