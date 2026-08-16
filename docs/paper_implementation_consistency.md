@@ -235,7 +235,32 @@ at the bottom.
     pilots -> archive -> Game A/B -> K=4 MC -> baselines -> allocations ->
     RQ4 -> compliance audit) on public runners with the canonical GroupLens
     download.
-21. **Console log layer** (`shaper/logging_utils.py`): every structured
+21. **Feasibility amendment** (`configs/amendment.yaml` + the spec B.7
+    amendment rule): the measured 8-11 s/step on the study machine made the
+    registered 10,000-step recipe and two-dataset confirmatory scope
+    infeasible, so a DRAFT, direction-independent amendment proposes to
+    shrink the recipe grids ({1000,2000,4000} steps; 1500-step LR probe;
+    2x2 lambda/tau grid), the intervention grids (alpha {0,.5,1}; 10-point
+    simplex; 5 Dirichlet candidates), and confirmatory scope to ML-1M
+    (Beauty keeps the K=4 MC extension and the surrogate appendix).
+    Thresholds, seeds, players, policies and hypothesis directions are
+    untouched. It is applied ONLY once frozen
+    (`--stage freeze-amendment`); while proposed, confirmatory stages
+    refuse to run and config hashes are unchanged. Freezing changes every
+    dataset's config hash (recorded in all downstream artifacts).
+22. **Cached ranking-adapter surrogate** (`shaper/surrogate.py`,
+    `--stage surrogate`): spec A.6's sanctioned cheap-attribution appendix —
+    frozen rec-only backbone + per-coalition ranking-path adapter that sits
+    in BOTH the ranking and contrastive paths, so the coalition contrastive
+    loss updates the ranking adapter and coalition membership genuinely
+    changes rankings. Validated against the full-retraining Game-A table
+    (Spearman over coalition values, per-player Shapley MAE, rank-order
+    agreement). It never replaces the primary table in confirmatory
+    reporting; a projection-only surrogate is structurally rejected, and a
+    regression test pins that different coalitions train different adapters
+    (the earlier design let the contrastive loss bypass the adapter, which
+    reproduced the prohibited projection-only behavior).
+23. **Console log layer** (`shaper/logging_utils.py`): every structured
     event is written to the run's `logs/events.jsonl` AND rendered as a
     human-readable `[HH:MM:SS] STAGE | event | key=value` line on stdout
     (silence with `console=False`); `scripts/run_all.py` wraps each stage in

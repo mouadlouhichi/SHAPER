@@ -154,6 +154,12 @@ REQUIREMENTS: List[Dict[str, Any]] = [
     {"req": "Appendix J planning half-width formula + hierarchical bootstrap; pilot-informed MDE tables",
      "source": "spec A.12", "file": "shaper/power.py", "test": "tests/unit/test_power.py"},
 
+    # ---- feasibility amendment + surrogate ---------------------------------------
+    {"req": "feasibility amendment (direction-independent, timestamped, frozen BEFORE confirmatory execution) can reduce budget/scope; proposed amendments are never applied and gate confirmatory stages",
+     "source": "spec B.7 (amendment rule)", "file": "configs/amendment.yaml, shaper/config.py::load_amendment", "test": "tests/unit/test_amendment_surrogate.py"},
+    {"req": "cached ranking-adapter surrogate starts from the rec-only checkpoint, freezes the backbone, trains a ranking-path adapter WITH the recommendation loss, alters rankings, and is validated against full retraining (Spearman + Shapley error); projection-only surrogate prohibited",
+     "source": "spec A.6", "file": "shaper/surrogate.py, scripts/run_surrogate.py", "test": "tests/unit/test_amendment_surrogate.py"},
+
     # ---- baselines / audits / diagnostics / preregistration ---------------------
     {"req": "recommendation baselines archived before confirmatory interpretation: GRU4Rec (rec-only, frozen recipe) + CL4SRec (grand-coalition reuse, protocol-compatible caveat); DuoRec/CoSeRec status explicit",
      "source": "paper 4.2", "file": "shaper/baseline_models.py, scripts/train_coalitions.py::stage_baselines", "test": "tests/unit/test_baselines_audit_prereg.py"},

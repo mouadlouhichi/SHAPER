@@ -4,6 +4,7 @@
 dataset:
   name: synthetic
   source: "generated synthetic recommender interactions (tests only)"
+  verification_only: true
   implicit_rating_threshold: null
   core: 2
   core_order: row_order

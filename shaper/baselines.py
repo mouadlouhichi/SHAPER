@@ -36,12 +36,14 @@ from .provenance import key_int
 # Weight-vector designs
 # --------------------------------------------------------------------------
 
-def simplex_design_15(n_views: int = 3, resolution: int = 6) -> List[Dict[str, float]]:
-    """Prespecified 15-point simplex design (K=3): all compositions of
-    `resolution` (6) into `n_views` nonnegative parts (step 1/6), sorted by
-    Euclidean distance from uniform, first 15 points. Deterministic."""
+def simplex_design_15(n_views: int = 3, resolution: int = 6, n_points: int = 15) -> List[Dict[str, float]]:
+    """Prespecified simplex design (K=3, 15 points registered): all
+    compositions of `resolution` (6) into `n_views` nonnegative parts
+    (step 1/6), sorted by Euclidean distance from uniform, first `n_points`
+    points. The feasibility amendment may shrink `n_points` (recorded in the
+    run budget). Deterministic."""
     if n_views != 3:
-        raise ValueError("the locked 15-point design is defined for K=3")
+        raise ValueError("the locked simplex design is defined for K=3")
     points: List[Tuple[float, ...]] = []
     for a in range(resolution + 1):
         for b in range(resolution + 1 - a):
@@ -49,7 +51,7 @@ def simplex_design_15(n_views: int = 3, resolution: int = 6) -> List[Dict[str, f
             points.append((a / resolution, b / resolution, c / resolution))
     uniform = np.array([1 / n_views] * n_views)
     points.sort(key=lambda p: float(np.linalg.norm(np.array(p) - uniform)))
-    selected = points[:15]
+    selected = points[:n_points]
     return [{"crop": p[0], "mask": p[1], "reorder": p[2]} for p in selected]
 
 

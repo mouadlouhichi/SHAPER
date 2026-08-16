@@ -24,6 +24,42 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIGS_DIR = os.path.join(REPO_ROOT, "configs")
 
 
+def load_amendment(cfgdir: str) -> Dict[str, Any]:
+    """Load configs/amendment.yaml (if present).
+
+    Returns {"applied": bool, "id", "frozen_at", "changes", "confirmatory_datasets"}.
+    Only FROZEN amendments are applied; proposed ones are returned with
+    applied=False so gates can refuse confirmatory work.
+    """
+    path = os.path.join(cfgdir, "amendment.yaml")
+    if not os.path.exists(path):
+        return {"applied": False, "id": None, "changes": []}
+    data = load_yaml(path)
+    applied = data.get("status") == "frozen"
+    return {
+        "applied": applied,
+        "id": data.get("amendment_id"),
+        "frozen_at": data.get("frozen_at"),
+        "changes": data.get("changes", []) if applied else [],
+        "surrogate_extra": data.get("surrogate", {}),
+        "surrogate_steps": data.get("surrogate", {}).get("steps"),
+        "confirmatory_datasets": (
+            next((c["to"] for c in data.get("changes", [])
+                  if c.get("key") == "scope.confirmatory_datasets"), None)
+            if applied else None
+        ),
+        "status": data.get("status"),
+    }
+
+
+def _apply_keyed_override(target: Dict[str, Any], dotted: str, value: Any) -> None:
+    parts = dotted.split(".")
+    node = target
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+    node[parts[-1]] = value
+
+
 def load_yaml(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
@@ -42,6 +78,7 @@ class RunConfig:
 
     dataset: str
     raw: Dict[str, Any]
+    amendment: Dict[str, Any]
     model: Dict[str, Any]
     augmentation: Dict[str, Any]
     training: Dict[str, Any]
@@ -70,6 +107,11 @@ class RunConfig:
     def hash(self) -> str:
         return self.config_hash()
 
+    def amendment_confirmatory_datasets(self):
+        """Datasets remaining in confirmatory scope after the amendment
+        (None = no scope restriction)."""
+        return self.amendment.get("confirmatory_datasets")
+
     def config_hash(self, include_recipe: bool = False) -> str:
         payload = {
             "dataset": self.raw["dataset"],
@@ -79,6 +121,11 @@ class RunConfig:
             "evaluation": self.evaluation,
             "roles": self.roles,
         }
+        if self.amendment.get("applied"):
+            payload["amendment"] = {
+                "id": self.amendment.get("id"),
+                "changes": self.amendment.get("changes"),
+            }
         if include_recipe:
             payload["training_recipe"] = self.training
         return _config_hash(payload, salt=self.dataset)
@@ -149,6 +196,28 @@ def load_run_config(
     statistics = load_yaml(os.path.join(cfgdir, "statistics.yaml"))
     scope = load_yaml(os.path.join(cfgdir, "scope.yaml"))
 
+    # FEASIBILITY AMENDMENT (spec B.7): a frozen, direction-independent,
+    # timestamped amendment overrides parts of the protocol BEFORE any
+    # confirmatory execution. `proposed` amendments are NOT applied (and
+    # confirmatory stages refuse to run while one is proposed).
+    amendment = load_amendment(cfgdir)
+    if amendment.get("applied"):
+        for change in amendment["changes"]:
+            key, to = change["key"], change["to"]
+            if key.startswith("statistics."):
+                _apply_keyed_override(statistics, key[len("statistics."):], to)
+            elif key == "surrogate.steps":
+                statistics.setdefault("surrogate", {})["steps"] = int(to)
+            elif key == "scope.confirmatory_datasets":
+                pass  # recorded via amendment metadata; consumed by stages
+            else:
+                raise ValueError(f"amendment key not understood: {key}")
+        # the amendment's surrogate block (budget + validation seed)
+        stats_surrogate = statistics.setdefault("surrogate", {})
+        for extra in ("validation_seed",):
+            if extra in amendment.get("surrogate_extra", {}):
+                stats_surrogate[extra] = int(amendment["surrogate_extra"][extra])
+
     paths = {
         "repo_root": root,
         "configs": cfgdir,
@@ -160,6 +229,7 @@ def load_run_config(
     }
     return RunConfig(
         dataset=dataset,
+        amendment=amendment,
         raw=raw,
         model=raw["model"],
         augmentation=raw["augmentation"],

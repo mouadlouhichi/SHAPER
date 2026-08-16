@@ -167,6 +167,31 @@ Every run writes `results/runs/<run_id>/manifest.json` (stages, hashes),
 evidence — PASS is never fabricated), `reproducibility_report.md`, and the
 structured JSONL event log.
 
+## Feasibility (amendment + surrogate)
+
+The registered protocol (10,000-step recipe, two-dataset exact enumeration)
+is computationally heavy: measured at 8-11 s/step on a CPU-only Apple
+Silicon machine, it projects to months of sequential compute. Two
+spec-sanctioned mechanisms make it applicable:
+
+1. **Feasibility amendment** — `configs/amendment.yaml` (draft, `status:
+   proposed`) reduces the recipe/intervention grids and limits confirmatory
+   scope to ML-1M, BEFORE any confirmatory execution and independent of any
+   effect direction (spec B.7). Freeze it with
+   `python scripts/run_all.py --stage freeze-amendment`; confirmatory stages
+   refuse to run while it is proposed. Thresholds, seeds, players and
+   hypothesis directions are untouched; freezing changes the config hashes
+   (recorded everywhere downstream).
+2. **Cached ranking-adapter surrogate** — `--stage surrogate` trains the
+   spec A.6 appendix surrogate (frozen rec-only backbone + ranking-path
+   adapter trained with the recommendation loss) for all 8 coalitions and
+   reports its error against the full-retraining table (Spearman + Shapley
+   MAE). It validates cheap attribution; it never replaces the primary game.
+
+With the amendment frozen, the study costs roughly 2,000-step coalitions:
+~60-70k total recipe+game steps ≈ **1 week on the Mac with 4 parallel
+workers, or ~$10-40 / 2-5 days on a rented GPU**.
+
 ## Implementation verification vs experiment execution
 
 These are different states, reported separately:

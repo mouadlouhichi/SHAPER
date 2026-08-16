@@ -208,8 +208,10 @@ def stage_controls(cfg, data, run, args, recipe, device):
     out["drop_lowest_loo"] = drop_lowest_loo(MAIN_PLAYERS, loo)
     out["random_removal"] = random_removal(MAIN_PLAYERS, key_seed=cfg.seeds["recipe_alpha"][0])
 
-    # 15-point simplex direct search on ONE declared calibration initialization
-    design = simplex_design_15()
+    # simplex direct search (15-point registered; the feasibility amendment
+    # may shrink it — the run records the count in the budget record)
+    n_simplex = int(cfg.statistics["interventions"].get("simplex_direct_search_points", 15))
+    design = simplex_design_15(n_points=n_simplex)
     search_scores = {}
     for i, weights in enumerate(design):
         ctx = _ctx(cfg, data, run, calib_seed, recipe, device, "weighted")
@@ -223,8 +225,9 @@ def stage_controls(cfg, data, run, args, recipe, device):
         "selected_weights": design[best_i], "budget": budget,
     }
 
-    # Ten Dirichlet reference candidates on the same calibration initialization
-    dirichlet = dirichlet_reference_candidates(seed=calib_seed)
+    # Dirichlet reference candidates on the same calibration initialization
+    n_dir = int(cfg.statistics["interventions"].get("dirichlet_reference_candidates", 10))
+    dirichlet = dirichlet_reference_candidates(n_candidates=n_dir, seed=calib_seed)
     dir_scores = []
     for weights in dirichlet:
         ctx = _ctx(cfg, data, run, calib_seed, recipe, device, "weighted")

@@ -52,6 +52,18 @@ def freeze_path(cfg) -> str:
     return os.path.join(cfg.paths["results"], f"freeze-synthetic-{cfg.dataset}.yaml")
 
 
+def amendment_ready(cfg) -> bool:
+    """The feasibility amendment must be FROZEN (or absent) before
+    confirmatory work (spec B.7 amendment rule).
+
+    Verification datasets (synthetic, ml100k) are exempt: they exist to
+    exercise the pipeline and never feed confirmatory tables.
+    """
+    if cfg.raw["dataset"].get("verification_only"):
+        return True
+    return not cfg.amendment.get("id") or cfg.amendment.get("applied")
+
+
 def archive_is_frozen(cfg) -> bool:
     path = freeze_path(cfg)
     if not os.path.exists(path):
@@ -60,7 +72,8 @@ def archive_is_frozen(cfg) -> bool:
     if freeze.get("status") != "frozen":
         return False
     sel = (freeze.get("selected_recipe") or {}).get(cfg.dataset) or {}
-    return all(sel.get(k) is not None for k in ("learning_rate", "steps", "lambda_cl", "tau"))
+    return all(sel.get(k) is not None for k in ("learning_rate", "steps", "lambda_cl", "tau")) \
+        and amendment_ready(cfg)
 
 
 def _pilot_tables_exist(cfg, args) -> bool:
@@ -91,6 +104,13 @@ def _require_archive(cfg, args) -> None:
         print("WARNING: running before ARCHIVE_FREEZE (--allow-before-archive). "
               "This run is NOT confirmatory.")
         return
+    if not amendment_ready(cfg):
+        raise SystemExit(_gate_message(
+            "confirmatory stage",
+            f"feasibility amendment {cfg.amendment.get('id')} is still 'proposed'",
+            "freeze it first: --stage freeze-amendment (direction-independent, "
+            "timestamped), then retry. Proposed amendments are never applied.",
+        ))
     raise SystemExit(_gate_message(
         "confirmatory stage",
         "confirmatory models cannot run before the pilot-informed archive exists "
@@ -99,6 +119,54 @@ def _require_archive(cfg, args) -> None:
         "--stage amendment, --stage archive, then retry. "
         "(Notebook: Sections 5, 7, 8, 9, then this section.)",
     ))
+
+
+def _amended_out_of_scope(cfg) -> bool:
+    scope = cfg.amendment_confirmatory_datasets()
+    return bool(
+        scope is not None
+        and cfg.dataset not in scope
+        and cfg.dataset not in ("synthetic", "ml100k")
+    )
+
+
+def _amendment_scope_message(cfg, stage) -> str:
+    return (
+        f"dataset {cfg.dataset} is outside the confirmatory scope of amendment "
+        f"{cfg.amendment.get('id')} ({cfg.amendment_confirmatory_datasets()}); "
+        f"{stage} for this dataset is not part of the amended study. Beauty "
+        "remains for the K=4 MC extension and the surrogate appendix."
+    )
+
+
+def freeze_amendment(cfg) -> int:
+    """Freeze configs/amendment.yaml (proposed -> frozen) with a timestamp.
+
+    Direction-independent and irreversible-in-spirit: the frozen amendment is
+    recorded in the preregistration snapshot and every downstream config hash.
+    """
+    path = os.path.join(cfg.paths["configs"], "amendment.yaml")
+    if not os.path.exists(path):
+        print("no configs/amendment.yaml present; nothing to freeze")
+        return 0
+    amendment = load_yaml(path)
+    if amendment.get("status") == "frozen":
+        print(f"amendment {amendment.get('amendment_id')} already frozen ({amendment.get('frozen_at')})")
+        return 0
+    amendment["status"] = "frozen"
+    amendment["frozen_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    import yaml
+
+    with open(path, "w", encoding="utf-8") as fh:
+        yaml.safe_dump(amendment, fh, sort_keys=True)
+    print(f"AMENDMENT {amendment['amendment_id']} FROZEN at {amendment['frozen_at']}")
+    print("Applied changes:")
+    for change in amendment.get("changes", []):
+        print(f"  {change['key']}: {change['from']} -> {change['to']}")
+    print("NOTE: freezing changes every dataset's config hash (recorded in all "
+          "downstream artifacts); the registered seed registry and thresholds "
+          "are untouched.")
+    return 0
 
 
 def _run_stage_inner(name: str, cfg, args) -> int:
@@ -124,6 +192,8 @@ def _run_stage_inner(name: str, cfg, args) -> int:
     if name == "preregister":
         # timestamped preregistration archive (spec B.7, before pilots)
         return _run_script("archive_preregistration.py", *ds)
+    if name == "freeze-amendment":
+        return freeze_amendment(cfg)
     if name == "amendment":
         out_path = os.path.join(cfg.paths["results"], f"amendment-{cfg.dataset}.json")
         with open(out_path, "w", encoding="utf-8") as fh:
@@ -210,14 +280,26 @@ def _run_stage_inner(name: str, cfg, args) -> int:
         print(f"ARCHIVE_FREEZE: {path} frozen (dataset={cfg.dataset})")
         return 0
     if name == "game-a":
+        if _amended_out_of_scope(cfg):
+            print("SKIPPED_BY_AMENDMENT: " + _amendment_scope_message(cfg, "Game A"))
+            return 0
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "game-a")
     if name == "baselines":
+        if _amended_out_of_scope(cfg):
+            print("SKIPPED_BY_AMENDMENT: " + _amendment_scope_message(cfg, "baselines"))
+            return 0
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "baselines")
     if name == "game-b":
+        if _amended_out_of_scope(cfg):
+            print("SKIPPED_BY_AMENDMENT: " + _amendment_scope_message(cfg, "Game B"))
+            return 0
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "game-b")
+    if name == "surrogate":
+        _require_archive(cfg, args)
+        return _run_script("run_surrogate.py", *common)
     if name == "k4-mc":
         _require_archive(cfg, args)
         return _run_script("train_coalitions.py", *common, "--stage", "k4-mc")

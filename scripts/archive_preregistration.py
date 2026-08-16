@@ -36,6 +36,7 @@ def snapshot_artifacts() -> dict:
         "configs/ml1m.yaml",
         "configs/beauty.yaml",
         "configs/manifest_freeze.yaml",
+        "configs/amendment.yaml",
         "requirements.txt",
         "requirements.lock",
         "pyproject.toml",

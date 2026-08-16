@@ -115,3 +115,14 @@ def test_gated_training_uses_separate_lr_and_is_training_only(tiny_cfg, tiny_dat
 
     gate = DatasetLevelGates(3)
     assert torch.allclose(gate.weights(), torch.full((3,), 1 / 3))
+
+
+def test_parse_seeds_comma_separated():
+    from scripts import train_coalitions
+
+    ns = type("A", (), {"seeds": "2001,2002"})()
+    assert train_coalitions._parse_seeds(ns, [1, 2]) == [2001, 2002]
+    ns2 = type("A", (), {"seeds": None})()
+    assert train_coalitions._parse_seeds(ns2, [1, 2]) == [1, 2]
+    ns3 = type("A", (), {"seeds": " 3001 "})()
+    assert train_coalitions._parse_seeds(ns3, []) == [3001]

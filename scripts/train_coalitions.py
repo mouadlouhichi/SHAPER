@@ -67,6 +67,16 @@ def make_ctx(cfg, data, run, seed, recipe, device, policy, base_state_path):
     )
 
 
+def _parse_seeds(args, default):
+    """Parse --seeds (comma-separated ints, or a list from programmatic
+    callers) or fall back to the config list."""
+    if not args.seeds:
+        return list(default)
+    if isinstance(args.seeds, (list, tuple)):
+        return [int(x) for x in args.seeds]
+    return [int(x.strip()) for x in str(args.seeds).split(",") if x.strip()]
+
+
 def train_one_coalition(cfg, data, run, seed, recipe, device, policy, coalition, base_state_path, stage):
     ctx = make_ctx(cfg, data, run, seed, recipe, device, policy, base_state_path)
     result = train_coalition(ctx, coalition)
@@ -83,7 +93,7 @@ def train_one_coalition(cfg, data, run, seed, recipe, device, policy, coalition,
 
 
 def stage_game_a(cfg, data, run, args, recipe, device, stage_name):
-    seeds = args.seeds or cfg.seeds["confirmatory_game_a"]
+    seeds = _parse_seeds(args, cfg.seeds["confirmatory_game_a"])
     policy = "game_a"
     records_by_seed = {}
     for seed in seeds:
@@ -145,7 +155,7 @@ def stage_k4_mc(cfg, data, run, args, recipe, device, stage_name):
             "K4_BEAUTY_MC is registered for Beauty only "
             "(ml100k/synthetic allow it purely to exercise the code path)"
         )
-    seeds = args.seeds or cfg.seeds["k4_beauty_mc"]
+    seeds = _parse_seeds(args, cfg.seeds["k4_beauty_mc"])
     players = K4_PLAYERS
     policy = "game_a"
     out = {}

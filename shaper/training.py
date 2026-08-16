@@ -212,6 +212,20 @@ def common_initialization(
     return {k: v.clone() for k, v in state.items()}
 
 
+def _init_trainable_weights(module: nn.Module) -> None:
+    """Initialize ONLY trainable parameters (factory/surrogate models): the
+    frozen base keeps the state it was loaded with."""
+    params = list(module.parameters(recurse=False))
+    if not params or not any(p.requires_grad for p in params):
+        return
+    if isinstance(module, nn.Linear):
+        nn.init.xavier_uniform_(module.weight)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.Embedding):
+        nn.init.normal_(module.weight, mean=0.0, std=0.02)
+
+
 def _init_weights(module: nn.Module) -> None:
     if isinstance(module, nn.Linear):
         nn.init.xavier_uniform_(module.weight)
@@ -362,7 +376,10 @@ def _train_one_step(
         cl_loss = weighted_cl_loss(view_losses, w_list)
         w_dict = dict(weights)
     else:
-        cl_loss = coalition_cl_loss(view_losses, list(views), ctx.policy, K=ctx.cfg.n_players)
+        # surrogate policies use Game-A semantics (fixed nominal coefficient
+        # budget); the policy label only namespaces the checkpoint cache
+        budget_policy = "game_a" if ctx.policy.startswith("surrogate_") else ctx.policy
+        cl_loss = coalition_cl_loss(view_losses, list(views), budget_policy, K=ctx.cfg.n_players)
         w_dict = {}
 
     loss = rec_loss + ctx.recipe.lambda_cl * cl_loss
@@ -382,7 +399,8 @@ def _train_one_step(
     if gate is not None or weights is not None:
         mass = float(sum(float(w_dict.get(v, 0.0)) * ap for v, ap in zip(views, a_p))) if a_p else 0.0
     else:
-        mass = effective_mass(a_p if a_p else [0.0], list(views), ctx.policy, K=ctx.cfg.n_players)
+        mass_policy = "game_a" if ctx.policy.startswith("surrogate_") else ctx.policy
+        mass = effective_mass(a_p if a_p else [0.0], list(views), mass_policy, K=ctx.cfg.n_players)
     return {
         "loss": float(loss.detach().item()),
         "rec_loss": float(rec_loss.detach().item()),
@@ -548,10 +566,10 @@ def train_coalition(
         init_state = common_initialization(ctx)
         model.load_state_dict({k: v.clone() for k, v in init_state.items()})
     else:
-        # baseline models have their own seed-specific initialization
-        # (same RNG discipline: seeded by the seed, xavier embeddings/linear)
+        # baseline/surrogate models: seed-specific initialization of the
+        # TRAINABLE parameters only; the loaded (frozen) base is preserved
         set_deterministic_rng(ctx.seed)
-        model.apply(_init_weights)
+        model.apply(_init_trainable_weights)
     model.to(ctx.device)
     optimizer = make_optimizer(model, ctx.cfg, ctx.recipe.learning_rate)
     scheduler = make_scheduler(optimizer, ctx.recipe.steps)
