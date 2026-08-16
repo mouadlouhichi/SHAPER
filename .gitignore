@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Raw datasets (downloaded archives; not committed)
+data/raw/*
+!data/raw/.gitkeep
+
+# Frozen data artifacts (regenerable via scripts/build_data.py; hashes are
+# recorded in the manifests and the archive freeze file)
+data/processed/*
+!data/processed/.gitkeep
+data/manifests/*
+!data/manifests/.gitkeep
+
+# Run outputs (checkpoints, logs, tables, figures). The directory layout is
+# documented in shaper/artifacts.py; runs are reproducible artifacts, not
+# source.
+!results/runs/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+*.pt
+# OS
+.DS_Store
+results/preregistration/

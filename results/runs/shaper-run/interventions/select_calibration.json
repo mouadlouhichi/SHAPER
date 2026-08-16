@@ -1,0 +1,36 @@
+{
+  "activation": {
+    "activated": false,
+    "checks": {
+      "all_positive_views_80pct_stable": {
+        "detail": "unstable views: []",
+        "pass": true
+      },
+      "grand_uplift_ci_above_zero": {
+        "detail": "CI95 = (-0.001027, -0.001027)",
+        "pass": false
+      },
+      "highest_weight_sign_stability": {
+        "detail": "crop positive in 1/1 seeds (need >= 4)",
+        "pass": false
+      }
+    },
+    "deployment_fallback": "rec-only",
+    "note": "activation never happens because results look promising",
+    "status": "NOT_ACTIVATED"
+  },
+  "decision": {
+    "action": "none",
+    "deployment": "rec-only",
+    "note": "activation rule failed; rec-only deployment fallback",
+    "removed_view": null,
+    "selected_coalition": [],
+    "status": "not activated"
+  },
+  "delta_phi": 0.003,
+  "phi_mean": {
+    "crop": 0.0008797294770677884,
+    "mask": -0.0004404561283687751,
+    "reorder": -0.0014658618407944837
+  }
+}

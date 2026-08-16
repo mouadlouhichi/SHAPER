@@ -1,0 +1,84 @@
+{
+  "antithetic_marginals": {},
+  "coalition_registry": {
+    "crop+dropout+mask": [
+      "crop",
+      "dropout",
+      "mask"
+    ],
+    "crop+dropout+mask+reorder": [
+      "crop",
+      "dropout",
+      "mask",
+      "reorder"
+    ],
+    "crop+dropout+reorder": [
+      "crop",
+      "dropout",
+      "reorder"
+    ],
+    "crop+mask+reorder": [
+      "crop",
+      "mask",
+      "reorder"
+    ],
+    "crop+reorder": [
+      "crop",
+      "reorder"
+    ],
+    "dropout": [
+      "dropout"
+    ],
+    "dropout+mask": [
+      "dropout",
+      "mask"
+    ],
+    "dropout+mask+reorder": [
+      "dropout",
+      "mask",
+      "reorder"
+    ],
+    "empty": [],
+    "reorder": [
+      "reorder"
+    ]
+  },
+  "completed": [
+    "empty",
+    "dropout",
+    "reorder",
+    "crop+reorder",
+    "dropout+mask",
+    "crop+dropout+mask",
+    "crop+dropout+reorder",
+    "crop+mask+reorder",
+    "dropout+mask+reorder",
+    "crop+dropout+mask+reorder"
+  ],
+  "estimates": {},
+  "permutation": [
+    "dropout",
+    "mask",
+    "crop",
+    "reorder"
+  ],
+  "reverse_permutation": [
+    "reorder",
+    "crop",
+    "mask",
+    "dropout"
+  ],
+  "seed": 3002,
+  "values": {
+    "crop+dropout+mask": 0.014251336455345154,
+    "crop+dropout+mask+reorder": 0.017836138606071472,
+    "crop+dropout+reorder": 0.02298375964164734,
+    "crop+mask+reorder": 0.02015666663646698,
+    "crop+reorder": 0.023111611604690552,
+    "dropout": 0.00875847041606903,
+    "dropout+mask": 0.02285616099834442,
+    "dropout+mask+reorder": 0.004490599036216736,
+    "empty": 0.0,
+    "reorder": 0.0023732036352157593
+  }
+}

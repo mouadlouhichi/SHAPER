@@ -1,0 +1,78 @@
+{
+  "ci95": {
+    "crop-mask": [
+      0.001042268704622984,
+      0.001042268704622984
+    ],
+    "crop-reorder": [
+      0.00045741675421595573,
+      0.00045741675421595573
+    ],
+    "mask-reorder": [
+      0.0009355382062494755,
+      0.0009355382062494755
+    ]
+  },
+  "declarations": {
+    "crop-mask": {
+      "ci95": [
+        0.001042268704622984,
+        0.001042268704622984
+      ],
+      "declaration": "INCONCLUSIVE",
+      "direction": null,
+      "mean": 0.001042268704622984
+    },
+    "crop-reorder": {
+      "ci95": [
+        0.00045741675421595573,
+        0.00045741675421595573
+      ],
+      "declaration": "INCONCLUSIVE",
+      "direction": null,
+      "mean": 0.00045741675421595573
+    },
+    "mask-reorder": {
+      "ci95": [
+        0.0009355382062494755,
+        0.0009355382062494755
+      ],
+      "declaration": "INCONCLUSIVE",
+      "direction": null,
+      "mean": 0.0009355382062494755
+    }
+  },
+  "delta_interaction": 0.003,
+  "epsilon_pq": {
+    "crop-mask": 0.00174686498939991,
+    "crop-reorder": 0.0023989565670490265,
+    "mask-reorder": 0.0013178316876292229
+  },
+  "label": "exact Grabisch-Roubens (K=3 complete tables)",
+  "mean_interactions": {
+    "crop-mask": 0.001042268704622984,
+    "crop-reorder": 0.00045741675421595573,
+    "mask-reorder": 0.0009355382062494755
+  },
+  "pairs": [
+    [
+      "crop",
+      "mask"
+    ],
+    [
+      "crop",
+      "reorder"
+    ],
+    [
+      "mask",
+      "reorder"
+    ]
+  ],
+  "per_seed": {
+    "2001": {
+      "crop-mask": 0.001042268704622984,
+      "crop-reorder": 0.00045741675421595573,
+      "mask-reorder": 0.0009355382062494755
+    }
+  }
+}

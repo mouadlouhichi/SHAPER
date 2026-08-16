@@ -1,0 +1,67 @@
+# SHAPER — FEASIBILITY AMENDMENT (DRAFT — status: proposed)
+#
+# Registered protocol documents: specs/SHAPER_Implementation_Spec.md and
+# specs/SHAPER_Paper_Structure.md. The staged preregistration sequence (spec
+# B.7) permits exactly ONE clearly labeled, timestamped, DIRECTION-INDEPENDENT
+# pilot-informed amendment BEFORE confirmatory execution.
+#
+# Rationale: measured per-step training cost on the study machine
+# (8-11 s/step idle, up to 28 s/step under load; macOS arm64, CPU) makes the
+# registered 10,000-step recipe and the two-dataset confirmatory scope
+# infeasible (projected 600+ days sequential). This amendment reduces the
+# training budget, shrinks the calibration/intervention grids, and limits
+# confirmatory scope to ML-1M BEFORE any confirmatory model is trained.
+# Beauty remains for the registered K=4 MC extension and the surrogate
+# appendix only. No threshold, seed, player, policy, or hypothesis direction
+# is changed by this amendment.
+#
+# The cached ranking-adapter surrogate (spec A.6, appendix experiment; seed
+# 4001) is promoted to a FEASIBILITY VALIDATION LAYER: it trains a ranking-
+# path adapter per coalition on the frozen rec-only backbone and is validated
+# against the full-retraining Game-A table on seed 2001 (report Spearman
+# correlation and Shapley-vector error). It never replaces the primary
+# Game-A table in confirmatory reporting.
+#
+# Freeze it with: python scripts/run_all.py --stage freeze-amendment
+# Confirmatory stages refuse to run while status == proposed.
+
+amendment_id: A-2026-08-16-feasibility
+status: proposed            # proposed -> frozen (freeze-amendment stage)
+frozen_at: null
+direction_independent: true
+rationale: |
+  measured 8-11 s/step (idle) on the study machine makes the registered
+  10,000-step recipe and two-dataset confirmatory scope infeasible; budget
+  and scope reduced BEFORE any confirmatory execution, independent of any
+  effect direction.
+changes:
+  - key: statistics.recipe.step_grid
+    from: [2500, 5000, 10000]
+    to: [1000, 2000, 4000]
+  - key: statistics.recipe.step1_steps
+    from: 5000
+    to: 1500
+  - key: statistics.recipe.lambda_grid
+    from: [0.05, 0.1, 0.2]
+    to: [0.05, 0.1]
+  - key: statistics.recipe.tau_grid
+    from: [0.07, 0.1, 0.2]
+    to: [0.1, 0.2]
+  - key: statistics.interventions.alpha_grid
+    from: [0.0, 0.25, 0.5, 0.75, 1.0]
+    to: [0.0, 0.5, 1.0]
+  - key: statistics.interventions.dirichlet_reference_candidates
+    from: 10
+    to: 5
+  - key: statistics.interventions.simplex_direct_search_points
+    from: 15
+    to: 10
+  - key: scope.confirmatory_datasets
+    from: [ml1m, beauty]
+    to: [ml1m]
+  - key: surrogate.steps
+    from: null
+    to: 500
+surrogate:
+  steps: 500                  # ranking-adapter surrogate training budget (appendix)
+  validation_seed: 2001       # compared against the full Game-A table of this seed

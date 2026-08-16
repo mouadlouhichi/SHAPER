@@ -1,0 +1,28 @@
+{
+  "branch": "arena/019ffcd7-shaper",
+  "commit": "df3c89876feb4a747a6824359734b1703c8369f7",
+  "cpu_count": 12,
+  "cuda_available": false,
+  "cuda_version": null,
+  "determinism": {
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": false,
+    "torch_deterministic_algorithms": false
+  },
+  "dirty": true,
+  "gpu_name": null,
+  "machine": "arm64",
+  "matplotlib_version": "3.11.1",
+  "numpy_version": "2.4.6",
+  "os": "Darwin",
+  "os_release": "25.6.0",
+  "pandas_version": "3.0.5",
+  "platform": "macOS-26.6-arm64-arm-64bit",
+  "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "python_target": "3.12 (spec); verified interpreter recorded in environment.json",
+  "scipy_version": "1.18.0",
+  "sklearn_version": "1.9.0",
+  "torch_threads": 8,
+  "torch_version": "2.13.0",
+  "yaml_version": "6.0.3"
+}

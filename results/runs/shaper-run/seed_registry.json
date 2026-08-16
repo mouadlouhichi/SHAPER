@@ -1,0 +1,26 @@
+{
+  "confirmatory_game_a": [
+    2001
+  ],
+  "cosine_diagnostic": [
+    2001
+  ],
+  "engineering": 1001,
+  "extension_game_a": [],
+  "game_b": [
+    2001
+  ],
+  "k4_beauty_mc": [
+    3001
+  ],
+  "nondeterminism_floor_repeat_seed": 2001,
+  "pilots": [
+    1001,
+    1002
+  ],
+  "recipe_alpha": [
+    901,
+    902,
+    903
+  ]
+}

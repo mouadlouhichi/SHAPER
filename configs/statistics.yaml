@@ -1,0 +1,104 @@
+# SHAPER — statistical protocol (locked before confirmatory execution).
+# All practical thresholds are fixed BEFORE any confirmatory result is seen
+# and are never scaled by observed grand uplift or effect direction.
+thresholds:
+  delta_phi: 0.003            # smallest practically relevant raw Shapley value (NDCG@10)
+  delta_interaction: 0.003    # smallest practically relevant pair interaction (NDCG@10)
+  delta_action: 0.003         # smallest practically relevant intervention effect (NDCG@10)
+  delta_weights_tolerance: 1.0e-12   # eps for positive-transform denominator
+
+# Recipe calibration grids (single pass, V_tune only, seeds 901–903).
+recipe:
+  learning_rates: [1.0e-4, 5.0e-4, 1.0e-3]
+  step_grid: [2500, 5000, 10000]
+  lambda_grid: [0.05, 0.1, 0.2]
+  tau_grid: [0.07, 0.1, 0.2]
+  provisional_lambda: 0.1
+  provisional_tau: 0.1
+  step1_steps: 5000
+  step2_advance: 2            # best two (lambda, tau) pairs advance to 902, 903
+  singleton_lambda_stress: [0.05, 0.1, 0.2]
+
+# NLL/cosine severity calibration grids (frozen rec-only checkpoints).
+severity:
+  target: median_canonical_increase
+  crop_eta_lows: [0.5, 0.6, 0.7, 0.8]   # upper bound fixed at 1.0
+  mask_gammas: [0.1, 0.2, 0.3, 0.4]
+  reorder_betas: [0.1, 0.2, 0.3, 0.4]
+  match_tolerance: 0.10                 # |d_p - d*| / max(|d*|, 1e-8) <= 0.10
+  partial_label_nll: "partial NLL severity alignment"
+  partial_label_cosine: "partial cosine alignment"
+
+# RQ4 intervention protocol.
+interventions:
+  alpha_grid: [0.0, 0.25, 0.5, 0.75, 1.0]
+  positive_transform: np.maximum(phi, 0) normalized; uniform fallback if sum <= eps
+  select_tie_order: [crop, mask, reorder, dropout]   # fixed display tie order
+  gate_learning_rate: 1.0e-2
+  gate_entropy_coefficients: [0.0, 0.01, 0.1]
+  dirichlet_reference_candidates: 10
+  simplex_direct_search_points: 15
+  # 15-point simplex design (K=3): all compositions of 6 into 3 nonnegative
+  # parts (step 1/6), sorted by Euclidean distance from uniform (1/3,1/3,1/3),
+  # taking the first 15. Deterministic and prespecified.
+  simplex_resolution: 6
+  activation:
+    grand_uplift_ci_level: 0.95
+    sign_stability_majority_fraction: 4 / 5        # >= 4/5 seeds (8/10 after extension)
+    sign_stability_all_positive_fraction: 0.80     # every positively weighted view >= 80% seeds
+  weight_final_seeds: confirmatory_game_a
+
+# RQ3 segment protocol.
+segments:
+  n_quartiles: 4
+  basis: pre_truncation_training_history_length
+  permutations: 10000              # user-level label permutations (same map across seeds)
+  mask_trend_weights: [-1.5, -0.5, 0.5, 1.5]   # (m - 2.5) for m = 1..4
+
+# RQ4 baseline / control budgets.
+controls:
+  loo_alpha_grid: [0.0, 0.25, 0.5, 0.75, 1.0]
+  calibration_initializations: 3    # same three recipe-calibration initializations
+  final_seeds: confirmatory_game_a
+
+# Seed extension rules (direction-blind, locked).
+extension:
+  game_a_half_width_trigger: delta_phi      # any raw phi interval half-width > delta_phi
+  game_a_grand_uplift_trigger: delta_action # grand-uplift CI half-width > delta_action
+  weight_vs_uniform_trigger: delta_action   # V_select Weight-vs-uniform CI half-width > delta_action
+
+# Holm families (locked; seed-level paired tests are the confirmatory unit).
+holm:
+  intervention_family:
+    - weight_vs_uniform
+    - select_vs_uniform
+    - weight_vs_loo
+    - select_vs_drop_lowest_loo
+    - weight_vs_gates
+    - weight_vs_direct_search
+  mask_family:                    # six exact-Game-A tests, NDCG and NLL
+    - ml1m_mask_trend_ndcg
+    - beauty_mask_trend_ndcg
+    - ml1m_vs_beauty_mask_ndcg
+    - ml1m_mask_trend_nll
+    - beauty_mask_trend_nll
+    - ml1m_vs_beauty_mask_nll
+  interaction_family_per_dataset:
+    - [crop, mask]
+    - [crop, reorder]
+    - [mask, reorder]
+
+# Planning formula for Appendix J (conservative half-width).
+planning:
+  half_width_formula: "h = t_(0.975, S-1) * sqrt(sigma_seed^2 / S + sigma_user^2 / N_game)"
+  variance_grid:
+    sigma_user: [0.05, 0.10]
+    sigma_seed: [0.001, 0.003]
+  confidence_level: 0.95
+
+# MC K=4 interpretation rule.
+mc_k4:
+  interpret_ordering_only_if: "95% MC half-width <= delta_phi"
+  inconclusive_label: INCONCLUSIVE
+  max_unique_models_per_seed: 10
+  permutation_samples_per_seed: 1   # pi_s + reverse(pi_s) antithetic pair

@@ -1,0 +1,10 @@
+data_hashes:
+  synthetic: 7c84cbe7624d1c474e20c2accd8e3901
+frozen_at: '2026-08-14T00:45:31Z'
+selected_recipe:
+  synthetic:
+    lambda_cl: 0.1
+    learning_rate: 0.001
+    steps: 16
+    tau: 0.1
+status: frozen

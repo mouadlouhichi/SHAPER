@@ -1,0 +1,98 @@
+{
+  "final_seeds": [
+    2001
+  ],
+  "note": "fallback is never counted as an adaptive success",
+  "prefix": "training history + validation item",
+  "recommendation_baselines": {
+    "cl4srec": {
+      "cost": "0 (grand-coalition reuse)",
+      "hr": 0.014925372786819935,
+      "mrr": 0.01487004105001688,
+      "ndcg": 0.010177897289395332,
+      "note": "protocol-compatible CL4SRec reference = uniform three-view contrastive SASRec"
+    }
+  },
+  "table7a_unconditional": [
+    {
+      "cost": "0 (reused)",
+      "hr": 0.030916843563318253,
+      "method": "rec-only",
+      "mrr": 0.0180282574146986,
+      "ndcg": 0.01494824979454279,
+      "note": "empty coalition"
+    },
+    {
+      "cost": "0 (reused)",
+      "hr": 0.014925372786819935,
+      "method": "uniform",
+      "mrr": 0.01487004105001688,
+      "ndcg": 0.010177897289395332,
+      "note": "grand coalition (1/K weights)"
+    },
+    {
+      "cost": "1 final-seed trainings",
+      "hr": 0.021321961656212807,
+      "method": "forced SHAPER-Weight",
+      "mrr": 0.013762351125478745,
+      "ndcg": 0.011334134265780449,
+      "note": "reported regardless of activation"
+    },
+    {
+      "cost": "0 (reused)",
+      "hr": 0.014925372786819935,
+      "method": "forced lowest-Shapley removal",
+      "mrr": 0.01487004105001688,
+      "ndcg": 0.010177897289395332,
+      "note": "removed=None"
+    },
+    {
+      "cost": "1 final-seed trainings",
+      "hr": 0.01918976567685604,
+      "method": "LOO-derived weights",
+      "mrr": 0.013259084895253181,
+      "ndcg": 0.010368003509938717,
+      "note": "same clipping/alpha grid"
+    },
+    {
+      "cost": "1 final-seed trainings",
+      "hr": 0.014925372786819935,
+      "method": "learned gates",
+      "mrr": 0.014365341514348984,
+      "ndcg": 0.00982985831797123,
+      "note": "entropy coef 0.0"
+    },
+    {
+      "cost": "15 calibration + 5 confirmation trainings",
+      "hr": 0.014925372786819935,
+      "method": "direct search (15-point)",
+      "mrr": 0.012687548995018005,
+      "ndcg": 0.008996216580271721,
+      "note": "one-initialization search"
+    },
+    {
+      "cost": "0 (reused)",
+      "hr": 0.017057569697499275,
+      "method": "random removal",
+      "mrr": 0.011605305597186089,
+      "ndcg": 0.008425919339060783,
+      "note": "removed=crop"
+    },
+    {
+      "cost": "10 calibration trainings",
+      "hr": null,
+      "method": "Dirichlet reference (median of 10)",
+      "mrr": null,
+      "ndcg": 0.0,
+      "note": "V_select reference distribution"
+    }
+  ],
+  "table7b_activation_conditioned": {
+    "deployment": "rec-only",
+    "hr": 0.030916843563318253,
+    "mrr": 0.0180282574146986,
+    "ndcg": 0.01494824979454279,
+    "status": "not activated"
+  },
+  "test_users": "all eligible users"
+}

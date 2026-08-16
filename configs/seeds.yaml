@@ -1,0 +1,24 @@
+# SHAPER — fixed seed registry (locked by the registered protocol).
+# No unlisted confirmatory seed may enter a confirmatory table without a
+# timestamped, direction-independent amendment.
+#
+# seed 1001 is also the engineering seed used for the preflight
+# determinism check. The nondeterminism-floor repeat uses confirmatory
+# seed 2001 with an additional run suffix (not a new seed).
+registry:
+  recipe_alpha: [901, 902, 903]     # recipe / alpha calibration
+  pilots: [1001, 1002]              # excluded full-game pilots
+  engineering: 1001
+  confirmatory_game_a: [2001, 2002, 2003, 2004, 2005]
+  extension_game_a: [2006, 2007, 2008, 2009, 2010]   # direction-blind only
+  game_b: [2001, 2002, 2003]        # Game B policy sensitivity (fixed; no expansion)
+  cosine_diagnostic: [2001, 2002, 2003]              # frozen encoder diagnostic
+  k4_beauty_mc: [3001, 3002, 3003, 3004, 3005]       # Beauty K=4 MC
+  cached_adapter: 4001               # optional cached ranking-adapter appendix
+
+# Identical-configuration repeat of the canonical Game-A grand coalition
+# (seed 2001) used to measure the execution-nondeterminism floor.
+nondeterminism_floor_repeat_seed: 2001
+
+# Seed used to derive the one permutation per K=4 seed and the MC paths.
+mc_permutation_seed_offset: 0        # pi_s sampled with key (s, "k4-permutation")

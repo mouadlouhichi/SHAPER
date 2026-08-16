@@ -1,0 +1,75 @@
+# SHAPER — synthetic verification dataset (NOT part of the registered study).
+# Used by the test suite and the end-to-end pipeline smoke test only.
+# Scientific decisions for ML-1M/Beauty live in ml1m.yaml / beauty.yaml.
+dataset:
+  name: synthetic
+  source: "generated synthetic recommender interactions (tests only)"
+  verification_only: true
+  implicit_rating_threshold: null
+  core: 2
+  core_order: row_order
+  max_len: 12
+  batch_size: 32
+  seed: 20260813
+
+model:
+  d: 16
+  heads: 2
+  blocks: 2
+  ff: 32
+  dropout: 0.2
+  projection: [16, 16, 16]
+  embed_vocab_offset: 2
+
+augmentation:
+  min_contrastive_pairs: 8
+  crop: {eta_low: 0.5, eta_high: 1.0, min_keep: 2, force_nonidentity: true}
+  mask: {gamma: 0.2, protect_last: false}
+  reorder: {beta: 0.2, min_span: 2, max_attempts: 10}
+  dropout: {p: 0.2, extra_forwards: 2}
+
+training:
+  optimizer: adamw
+  betas: [0.9, 0.98]
+  eps: 1.0e-8
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  warmup_frac: 0.10
+  cosine_final_frac: 0.1
+  lr: null             # frozen by RECIPE_CALIBRATION (manifest freeze)
+  steps: null
+  lambda_cl: null
+  tau: null
+  checkpoint_interval: 8
+
+evaluation:
+  k: 10
+  secondary_ks: [5, 10]
+  tie_break: item_id_ascending
+  prefix_filter: true
+  retain_repeated_target: true
+
+roles:
+  tune: 0.20
+  game: 0.60
+  select: 0.20
+
+cost_estimate:
+  minutes_per_coalition: [0.05, 0.1]
+  peak_gpu_memory_target_gb: 0.5
+
+# Verification-only overrides: shrink the registered calibration grids so the
+# synthetic smoke pipeline completes in minutes. These keys are read by the
+# scripts ONLY for the synthetic dataset; ml1m/beauty use the locked grids in
+# configs/statistics.yaml unchanged. Every override is recorded in the run's
+# provenance (config overrides field).
+recipe_override:
+  learning_rates: [1.0e-3]
+  step1_steps: 12
+  step_grid: [8, 16]
+  lambda_grid: [0.1]
+  tau_grid: [0.1]
+  singleton_lambda_stress: [0.1]
+interventions_override:
+  alpha_grid: [0.0, 0.5, 1.0]
+  gate_entropy_coefficients: [0.0, 0.1]
